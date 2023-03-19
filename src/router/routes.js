@@ -1,7 +1,7 @@
 export default [
   {
     path: "/",
-    component: () => import("~/App.vue"),
+    component: () => import("~/views/AppContainer.vue"),
   },
   {
     path: "/:notFound(.*)",
