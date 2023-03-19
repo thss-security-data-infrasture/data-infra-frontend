@@ -9,12 +9,20 @@ export default [
         component: () => import("~/views/data/Fields.vue"),
       },
       {
+        path: "/data/logs",
+        component: () => import("~/views/data/Logs.vue"),
+      },
+      {
         path: "/data/prov",
         component: () => import("~/views/data/Prov.vue"),
       },
       {
         path: "/info/assets",
         component: () => import("~/views/info/Assets.vue"),
+      },
+      {
+        path: "/info/vuls",
+        component: () => import("~/views/info/Vuls.vue"),
       },
       {
         path: "/info/situation",

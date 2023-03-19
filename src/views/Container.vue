@@ -1,10 +1,16 @@
+<script setup>
+import { ref } from "vue";
+
+const openedMenuItems = ref(["/data", "/info", "/knowledge"]);
+</script>
+
 <template>
   <el-container style="height: 100%">
     <el-container>
       <el-aside width="200px">
         <el-menu
           default-active="/data/fields"
-          default-openeds="['/data', '/info', '/knowledge']"
+          :default-openeds="openedMenuItems"
           style="height: 100%"
           router
         >
@@ -16,6 +22,7 @@
               <span>数据库</span>
             </template>
             <el-menu-item index="/data/fields">字段表</el-menu-item>
+            <el-menu-item index="/data/logs">融合日志</el-menu-item>
             <el-menu-item index="/data/prov">溯源图</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="/info">
@@ -26,6 +33,7 @@
               <span>情报库</span>
             </template>
             <el-menu-item index="/info/assets">资产列表</el-menu-item>
+            <el-menu-item index="/info/vuls">漏洞列表</el-menu-item>
             <el-menu-item index="/info/situation">系统态势</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="/knowledge">
