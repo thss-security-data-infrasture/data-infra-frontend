@@ -35,7 +35,7 @@
               </el-icon>
               <span>知识库</span>
             </template>
-            <el-menu-item index="/knowledge/studies">教学材料</el-menu-item>
+            <el-menu-item index="/knowledge/courses">教学材料</el-menu-item>
             <el-menu-item index="/knowledge/shares">经验分享</el-menu-item>
             <el-menu-item index="/knowledge/recomms">知识推荐</el-menu-item>
           </el-sub-menu>
