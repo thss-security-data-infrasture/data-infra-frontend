@@ -6,7 +6,6 @@
 </template>
 
 <style>
-/*主屏幕高度拉满*/
 html,
 body,
 #app {
