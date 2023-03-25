@@ -1,1 +1,1 @@
-<template>资产列表</template>
+<template>资产梳理</template>
