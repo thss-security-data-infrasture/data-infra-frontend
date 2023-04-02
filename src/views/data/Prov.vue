@@ -36,8 +36,7 @@ onMounted(() => {
       size: 1,
       color: "#e2e2e2",
     },
-    minZoom: 0.5, // 设置最小缩放比例
-    maxZoom: 1.5, // 设置最大缩放比例
+    maxZoom: 1.2, // 设置最大缩放比例
     fitView: true,
     fitViewPadding: 20,
   });
@@ -180,7 +179,7 @@ onMounted(() => {
       size: 1,
       color: "#e2e2e2",
     },
-    maxZoom: 1.5, // 设置最大缩放比例
+    maxZoom: 1.2, // 设置最大缩放比例
     fitView: true,
     fitViewPadding: 20,
   });
