@@ -9,7 +9,7 @@ const openedMenuItems = ref(["/data", "/info", "/knowledge"]);
     <el-container>
       <el-aside width="200px">
         <el-menu
-          default-active="/data/fields"
+          :default-active="$route.path"
           :default-openeds="openedMenuItems"
           style="height: 100%"
           router
