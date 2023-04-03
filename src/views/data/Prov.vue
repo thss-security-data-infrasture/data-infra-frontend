@@ -33,12 +33,34 @@ onMounted(() => {
       },
     },
     defaultEdge: {
-      size: 1,
-      color: "#e2e2e2",
+      style: {
+        stroke: "#e2e2e2",
+        lineWidth: 2, // 默认边线宽度
+      },
     },
     maxZoom: 1.2, // 设置最大缩放比例
     fitView: true,
     fitViewPadding: 20,
+    // 启用tooltip
+    plugins: [
+      new G6.Tooltip({
+        // 提供一个格式化函数
+        getContent(evt) {
+          const { item } = evt;
+          const model = item.getModel();
+          // 根据节点数据返回要显示的tooltip内容
+          return `<div>
+                    <p>ID: ${model.id}</p>
+                    <p>Label: ${model.label}</p>
+                    <p>Weight: ${model.weight}</p>
+                  </div>`;
+        },
+        // 设置tooltip的样式
+        offsetX: 10,
+        offsetY: 20,
+        itemTypes: ["node"], // 仅显示节点的tooltip
+      }),
+    ],
   });
 
   const data = {
@@ -65,7 +87,7 @@ onMounted(() => {
 
   graph.on("node:mouseenter", (evt) => {
     const { item } = evt;
-
+  
     if (item !== highlightedNode) {
       const model = item.getModel();
       model.size = model.size * 1.2; // 让节点大小增加20%
