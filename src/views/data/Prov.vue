@@ -1,11 +1,41 @@
 <script setup>
 import G6 from "@antv/g6";
-import { onMounted } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 
-onMounted(() => {
-  const overviewGraphContainer = document.getElementById("overview-graph");
+// overview graph
+const data = {
+  nodes: [
+    { id: "node1", label: "Node 1", size: 50, type: "rect" },
+    { id: "node2", label: "Node 2", size: 50, type: "diamond" },
+    { id: "node3", label: "Node 3", size: 50, type: "ellipse" },
+    { id: "node4", label: "Node 4", size: 50, type: "ellipse" },
+    { id: "node5", label: "Node 5", size: 60, type: "ellipse" },
+  ],
+  edges: [
+    { source: "node1", target: "node2", ts: 114514 },
+    { source: "node2", target: "node3", ts: 1919810 },
+    { source: "node3", target: "node4", ts: 7777777 },
+    { source: "node4", target: "node5", ts: 6324 },
+    { source: "node5", target: "node1", ts: 12306 },
+  ],
+};
+
+let overviewGraph = null;
+let overviewGraphContainer = null;
+const overviewGraphColSpan = ref(24);
+watch(overviewGraphColSpan, () => {
+  nextTick(() => {
+    const newWidth = overviewGraphContainer.clientWidth;
+    const newHeight = overviewGraphContainer.clientHeight;
+    overviewGraph.changeSize(newWidth, newHeight);
+    overviewGraph.fitView(20);
+  });
+});
+
+function createOverviewGragh(containerId) {
+  overviewGraphContainer = document.getElementById(containerId);
   const graph = new G6.Graph({
-    container: "overview-graph",
+    container: containerId,
     width: overviewGraphContainer.clientWidth,
     height: overviewGraphContainer.clientHeight,
     modes: {
@@ -34,87 +64,50 @@ onMounted(() => {
     },
     defaultEdge: {
       style: {
-        stroke: "#e2e2e2",
-        lineWidth: 2, // 默认边线宽度
+        stroke: "#3F3F3F",
+        lineWidth: 2,
+        endArrow: true,
       },
     },
-    maxZoom: 1.2, // 设置最大缩放比例
-    fitView: true,
-    fitViewPadding: 20,
+    maxZoom: 1.2, // 最大缩放比例
     // 启用tooltip
     plugins: [
       new G6.Tooltip({
-        // 提供一个格式化函数
         getContent(evt) {
           const { item } = evt;
           const model = item.getModel();
-          // 根据节点数据返回要显示的tooltip内容
-          return `<div>
-                    <p>ID: ${model.id}</p>
-                    <p>Label: ${model.label}</p>
-                    <p>Weight: ${model.weight}</p>
-                  </div>`;
+          if (model.id.startsWith("edge")) {
+            return `<div>
+                      <p>Timestamp: ${model.ts}</p>
+                    </div>`;
+          } else {
+            return `<div>
+                      <p>ID: ${model.id}</p>
+                      <p>Label: ${model.label}</p>
+                      <p>Size: ${model.size}</p>
+                    </div>`;
+          }
         },
-        // 设置tooltip的样式
         offsetX: 10,
         offsetY: 20,
-        itemTypes: ["node"], // 仅显示节点的tooltip
+        itemTypes: ["node", "edge"],
       }),
     ],
   });
 
-  const data = {
-    nodes: [
-      { id: "node1", label: "Node 1", size: 20 },
-      { id: "node2", label: "Node 2", size: 30 },
-      { id: "node3", label: "Node 3", size: 40 },
-      { id: "node4", label: "Node 4", size: 50 },
-      { id: "node5", label: "Node 5", size: 60 },
-    ],
-    edges: [
-      { source: "node1", target: "node2" },
-      { source: "node2", target: "node3" },
-      { source: "node3", target: "node4" },
-      { source: "node4", target: "node5" },
-      { source: "node5", target: "node1" },
-    ],
-  };
-
-  graph.data(data);
-  graph.render();
-
+  // 高亮
   let highlightedNode = null;
-
-  graph.on("node:mouseenter", (evt) => {
-    const { item } = evt;
-  
-    if (item !== highlightedNode) {
-      const model = item.getModel();
-      model.size = model.size * 1.2; // 让节点大小增加20%
-      graph.updateItem(item, model);
-    }
-  });
-
-  graph.on("node:mouseleave", (evt) => {
-    const { item } = evt;
-
-    if (item !== highlightedNode) {
-      const model = item.getModel();
-      model.size = model.size / 1.2; // 恢复节点原始大小
-      graph.updateItem(item, model);
-    }
-  });
-
   graph.on("node:click", (evt) => {
     const { item } = evt;
 
     if (highlightedNode) {
       if (highlightedNode === item) {
-        // 点击已高亮的节点时取消变暗效果
+        // 点击已高亮的节点时取消变暗效果并恢复全屏
         graph.getNodes().forEach((node) => {
           graph.setItemState(node, "dim", false);
         });
         highlightedNode = null;
+        overviewGraphColSpan.value = 24;
       } else {
         // 点击其他节点时切换高亮状态
         graph.getNodes().forEach((node) => {
@@ -127,50 +120,89 @@ onMounted(() => {
         highlightedNode = item;
       }
     } else {
-      // 首次点击节点时使其他节点变暗
+      // 首次点击节点时使其他节点变暗并移到左边
       graph.getNodes().forEach((node) => {
         if (node !== item) {
           graph.setItemState(node, "dim", true);
         }
       });
       highlightedNode = item;
+      overviewGraphColSpan.value = 12;
     }
   });
 
+  // 重新布局
   function refreshDragedNodePosition(e) {
     const model = e.item.get("model");
     model.fx = e.x;
     model.fy = e.y;
   }
-
   graph.on("node:dragstart", function (e) {
     graph.layout();
     refreshDragedNodePosition(e);
   });
-
   graph.on("node:drag", function (e) {
     refreshDragedNodePosition(e);
   });
-
   graph.on("node:dragend", function (e) {
     e.item.get("model").fx = null;
     e.item.get("model").fy = null;
   });
-
   window.addEventListener("resize", () => {
     const newWidth = overviewGraphContainer.clientWidth;
     const newHeight = overviewGraphContainer.clientHeight;
-
-    // 更新图的尺寸
     graph.changeSize(newWidth, newHeight);
     graph.fitView(20);
   });
-});
+
+  return graph;
+}
 
 onMounted(() => {
-  const detailGraphContainer = document.getElementById("detail-graph");
+  overviewGraph = createOverviewGragh("overview-graph");
+  overviewGraph.data(data);
+  overviewGraph.render();
+});
+
+// detail graph
+const data2 = {
+  nodes: [
+    { id: "node11", label: "Node 1", size: 50, type: "rect" },
+    { id: "node12", label: "Node 2", size: 50, type: "diamond" },
+    { id: "node13", label: "Node 3", size: 50, type: "ellipse" },
+    { id: "node14", label: "Node 4", size: 50, type: "ellipse" },
+    { id: "node15", label: "Node 5", size: 60, type: "ellipse" },
+  ],
+  edges: [
+    { source: "node11", target: "node12", ts: 114514 },
+    { source: "node12", target: "node13", ts: 1919810 },
+    { source: "node13", target: "node14", ts: 7777777 },
+    { source: "node14", target: "node15", ts: 6324 },
+    { source: "node15", target: "node11", ts: 12306 },
+  ],
+};
+
+let detailGraph = null;
+let detailGraphContainer = null;
+const detailGraphColSpan = computed(() => {
+  return 24 - overviewGraphColSpan.value;
+});
+
+watch(detailGraphColSpan, (val) => {
+  if (val > 0) {
+    nextTick(() => {
+      detailGraph = createDetailGragh("detail-graph");
+      detailGraph.data(data2);
+      detailGraph.render();
+    });
+  } else {
+    detailGraph.destroy();
+  }
+});
+function createDetailGragh(containerId) {
+  detailGraphContainer = document.getElementById(containerId);
   const graph = new G6.Graph({
-    container: "detail-graph",
+    container: containerId,
     width: detailGraphContainer.clientWidth,
     height: detailGraphContainer.clientHeight,
     modes: {
@@ -198,56 +230,40 @@ onMounted(() => {
       },
     },
     defaultEdge: {
-      size: 1,
-      color: "#e2e2e2",
+      style: {
+        stroke: "#3F3F3F",
+        lineWidth: 2,
+        endArrow: true,
+      },
     },
-    maxZoom: 1.2, // 设置最大缩放比例
-    fitView: true,
-    fitViewPadding: 20,
+    maxZoom: 1.2, // 最大缩放比例
+    // 启用tooltip
+    plugins: [
+      new G6.Tooltip({
+        getContent(evt) {
+          const { item } = evt;
+          const model = item.getModel();
+          if (model.id.startsWith("edge")) {
+            return `<div>
+                      <p>Timestamp: ${model.ts}</p>
+                    </div>`;
+          } else {
+            return `<div>
+                      <p>ID: ${model.id}</p>
+                      <p>Label: ${model.label}</p>
+                      <p>Size: ${model.size}</p>
+                    </div>`;
+          }
+        },
+        offsetX: 10,
+        offsetY: 20,
+        itemTypes: ["node", "edge"],
+      }),
+    ],
   });
 
-  const data = {
-    nodes: [
-      { id: "node1", label: "Node 1", size: 20 },
-      { id: "node2", label: "Node 2", size: 30 },
-      { id: "node3", label: "Node 3", size: 40 },
-      { id: "node4", label: "Node 4", size: 50 },
-      { id: "node5", label: "Node 5", size: 60 },
-    ],
-    edges: [
-      { source: "node1", target: "node2" },
-      { source: "node2", target: "node3" },
-      { source: "node3", target: "node4" },
-      { source: "node4", target: "node5" },
-      { source: "node5", target: "node1" },
-    ],
-  };
-
-  graph.data(data);
-  graph.render();
-
+  // 高亮
   let highlightedNode = null;
-
-  graph.on("node:mouseenter", (evt) => {
-    const { item } = evt;
-
-    if (item !== highlightedNode) {
-      const model = item.getModel();
-      model.size = model.size * 1.2; // 让节点大小增加20%
-      graph.updateItem(item, model);
-    }
-  });
-
-  graph.on("node:mouseleave", (evt) => {
-    const { item } = evt;
-
-    if (item !== highlightedNode) {
-      const model = item.getModel();
-      model.size = model.size / 1.2; // 恢复节点原始大小
-      graph.updateItem(item, model);
-    }
-  });
-
   graph.on("node:click", (evt) => {
     const { item } = evt;
 
@@ -280,49 +296,52 @@ onMounted(() => {
     }
   });
 
+  // 重新布局
   function refreshDragedNodePosition(e) {
     const model = e.item.get("model");
     model.fx = e.x;
     model.fy = e.y;
   }
-
   graph.on("node:dragstart", function (e) {
     graph.layout();
     refreshDragedNodePosition(e);
   });
-
   graph.on("node:drag", function (e) {
     refreshDragedNodePosition(e);
   });
-
   graph.on("node:dragend", function (e) {
     e.item.get("model").fx = null;
     e.item.get("model").fy = null;
   });
-
   window.addEventListener("resize", () => {
     const newWidth = detailGraphContainer.clientWidth;
     const newHeight = detailGraphContainer.clientHeight;
-
-    // 更新图的尺寸
     graph.changeSize(newWidth, newHeight);
     graph.fitView(20);
   });
-});
+
+  return graph;
+}
 </script>
 
 <template>
-  <p>溯源图</p>
   <el-container style="height: 100%">
-    <el-main style="height: 100%">
+    <el-main style="height: 100%; overflow-y: hidden">
       <el-row style="height: 100%">
-        <el-col :span="12">
+        <el-col :span="overviewGraphColSpan">
           <div id="overview-graph" style="width: 100%; height: 100%"></div>
         </el-col>
-        <el-col :span="12">
+        <el-col :span="detailGraphColSpan">
           <div id="detail-graph" style="width: 100%; height: 100%"></div>
         </el-col>
       </el-row>
     </el-main>
   </el-container>
 </template>
+
+<style>
+.el-card__body {
+  height: 100%;
+  padding: 0;
+}
+</style>
