@@ -1,25 +1,9 @@
 <script setup>
+import axios from "axios";
 import G6 from "@antv/g6";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 
 // overview graph
-const data = {
-  nodes: [
-    { id: "node1", label: "Node 1", size: 50, type: "rect" },
-    { id: "node2", label: "Node 2", size: 50, type: "diamond" },
-    { id: "node3", label: "Node 3", size: 50, type: "ellipse" },
-    { id: "node4", label: "Node 4", size: 50, type: "ellipse" },
-    { id: "node5", label: "Node 5", size: 60, type: "ellipse" },
-  ],
-  edges: [
-    { source: "node1", target: "node2", ts: 114514 },
-    { source: "node2", target: "node3", ts: 1919810 },
-    { source: "node3", target: "node4", ts: 7777777 },
-    { source: "node4", target: "node5", ts: 6324 },
-    { source: "node5", target: "node1", ts: 12306 },
-  ],
-};
-
 let overviewGraph = null;
 let overviewGraphContainer = null;
 const overviewGraphColSpan = ref(24);
@@ -50,7 +34,7 @@ function createOverviewGragh(containerId) {
       edgeStrength: 0.5,
     },
     defaultNode: {
-      size: 20,
+      size: 30,
       style: {
         lineWidth: 2,
         fill: "#C6E5FF",
@@ -64,7 +48,7 @@ function createOverviewGragh(containerId) {
     },
     defaultEdge: {
       style: {
-        stroke: "#3F3F3F",
+        stroke: "#909399",
         lineWidth: 2,
         endArrow: true,
       },
@@ -81,11 +65,19 @@ function createOverviewGragh(containerId) {
                       <p>Timestamp: ${model.ts}</p>
                     </div>`;
           } else {
-            return `<div>
-                      <p>ID: ${model.id}</p>
-                      <p>Label: ${model.label}</p>
-                      <p>Size: ${model.size}</p>
-                    </div>`;
+            if (model.node_type === "host") {
+              return `<div>
+                        <p>ip: ${model.ip}</p>
+                      </div>`;
+            } else if (model.node_type === "app") {
+              return `<div>
+                        <p>id: ${model.id}</p>
+                      </div>`;
+            } else {
+              return `<div>
+                        <p>id: ${model.id}</p>
+                      </div>`;
+            }
           }
         },
         offsetX: 10,
@@ -127,7 +119,7 @@ function createOverviewGragh(containerId) {
         }
       });
       highlightedNode = item;
-      overviewGraphColSpan.value = 12;
+      overviewGraphColSpan.value = 16;
     }
   });
 
@@ -158,10 +150,41 @@ function createOverviewGragh(containerId) {
   return graph;
 }
 
+function nodeTypeToShape(type) {
+  switch (type) {
+    case "host":
+      return "diamond";
+    case "app":
+      return "rect";
+    default:
+      return "circle";
+  }
+}
+
 onMounted(() => {
-  overviewGraph = createOverviewGragh("overview-graph");
-  overviewGraph.data(data);
-  overviewGraph.render();
+  axios
+    .post("http://10.0.0.236:8000/api/parser/", {
+      start_time: "2023-04-03T00:00:00.000Z",
+      end_time: "2023-04-06T00:00:00.000Z",
+      ip: "10.0.0.47",
+      hostname: "10-0-0-47",
+      level: "holistic",
+      demo: false,
+    })
+    .then((res) => {
+      const graphData = {
+        nodes: res.data.graph.nodes.map((node) => ({
+          ...node,
+          node_type: node.type,
+          type: nodeTypeToShape(node.type),
+        })),
+        edges: res.data.graph.edges,
+      };
+      console.log(graphData);
+      overviewGraph = createOverviewGragh("overview-graph");
+      overviewGraph.data(graphData);
+      overviewGraph.render();
+    });
 });
 
 // detail graph
