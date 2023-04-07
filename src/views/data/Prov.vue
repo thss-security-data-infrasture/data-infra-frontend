@@ -1,12 +1,117 @@
 <script setup>
-import axios from "axios";
 import G6 from "@antv/g6";
+import axios from "axios";
+
 import { computed, nextTick, onMounted, ref, watch } from "vue";
+
+// tools
+const loading = ref(false);
+
+function nodeTypeToShape(type) {
+  switch (type) {
+    case "host":
+      return "diamond";
+    case "app":
+      return "rect";
+    default:
+      return "circle";
+  }
+}
+
+function getTooltip(model) {
+  if (model.id.startsWith("edge")) {
+    if (model.ts) {
+      return `<div>
+                <p>timestamp: ${model.ts}</p>
+              </div>`;
+    } else if (model.access) {
+      return `<div>
+                <p>access: ${model.access}</p>
+              </div>`;
+    } else {
+      return ``;
+    }
+  } else {
+    if (model.node_type === "host") {
+      return `<div>
+                <p>ip: ${model.ip}</p>
+              </div>`;
+    } else if (model.node_type === "app") {
+      return `<div>
+                <p>id: ${model.id}</p>
+              </div>`;
+    } else if (model.node_type === "alert") {
+      return `<div>
+                <p>ip: ${model.ip}</p>
+                <p>time: ${model.time}</p>
+              </div>`;
+    } else {
+      return ``;
+    }
+  }
+}
+
+function updateOverviewGraph() {
+  loading.value = true;
+  axios
+    .post("http://10.0.0.236:8000/api/parser/", {
+      start_time: "2023-04-03T00:00:00.000Z",
+      end_time: "2023-04-06T00:00:00.000Z",
+      ip: "10.0.0.47",
+      hostname: "10-0-0-47",
+      level: "holistic",
+      demo: false,
+    })
+    .then((res) => {
+      const graphData = {
+        nodes: res.data.graph.nodes.map((node) => ({
+          ...node,
+          node_type: node.type,
+          type: nodeTypeToShape(node.type),
+        })),
+        edges: res.data.graph.edges,
+      };
+      overviewGraph = createOverviewGragh("overview-graph");
+      overviewGraph.data(graphData);
+      overviewGraph.render();
+      loading.value = false;
+    });
+}
+
+function updateDetailGraph() {
+  loading.value = true;
+  axios
+    .post("http://10.0.0.236:8000/api/parser/", {
+      start_time: "2023-04-04T10:19:00.00Z",
+      end_time: "2023-04-04T10:23:17.00Z",
+      ip: "10.0.0.193",
+      hostname: "",
+      level: "alert",
+      demo: true,
+    })
+    .then((res) => {
+      const graphData = {
+        nodes: res.data.graph.nodes.map((node) => ({
+          ...node,
+          node_type: node.type,
+          type: nodeTypeToShape(node.type),
+        })),
+        edges: res.data.graph.edges,
+      };
+      detailGraph = createDetailGragh("detail-graph");
+      detailGraph.data(graphData);
+      detailGraph.render();
+      loading.value = false;
+    });
+}
 
 // overview graph
 let overviewGraph = null;
 let overviewGraphContainer = null;
+let overviewGraphHighlightedNode = null;
+
 const overviewGraphColSpan = ref(24);
+
 watch(overviewGraphColSpan, () => {
   nextTick(() => {
     const newWidth = overviewGraphContainer.clientWidth;
@@ -15,6 +120,15 @@ watch(overviewGraphColSpan, () => {
     overviewGraph.fitView(20);
   });
 });
+
+const closeDetailGraph = () => {
+  // 取消变暗效果并恢复全屏
+  overviewGraph.getNodes().forEach((node) => {
+    overviewGraph.setItemState(node, "dim", false);
+  });
+  overviewGraphHighlightedNode = null;
+  overviewGraphColSpan.value = 24;
+};
 
 function createOverviewGragh(containerId) {
   overviewGraphContainer = document.getElementById(containerId);
@@ -48,7 +162,7 @@ function createOverviewGragh(containerId) {
     },
     defaultEdge: {
       style: {
-        stroke: "#909399",
+        stroke: "#C0C4CC",
         lineWidth: 2,
         endArrow: true,
       },
@@ -60,25 +174,7 @@ function createOverviewGragh(containerId) {
         getContent(evt) {
           const { item } = evt;
           const model = item.getModel();
-          if (model.id.startsWith("edge")) {
-            return `<div>
-                      <p>Timestamp: ${model.ts}</p>
-                    </div>`;
-          } else {
-            if (model.node_type === "host") {
-              return `<div>
-                        <p>ip: ${model.ip}</p>
-                      </div>`;
-            } else if (model.node_type === "app") {
-              return `<div>
-                        <p>id: ${model.id}</p>
-                      </div>`;
-            } else {
-              return `<div>
-                        <p>id: ${model.id}</p>
-                      </div>`;
-            }
-          }
+          return getTooltip(model);
         },
         offsetX: 10,
         offsetY: 20,
@@ -88,17 +184,16 @@ function createOverviewGragh(containerId) {
   });
 
   // 高亮
-  let highlightedNode = null;
   graph.on("node:click", (evt) => {
     const { item } = evt;
 
-    if (highlightedNode) {
-      if (highlightedNode === item) {
+    if (overviewGraphHighlightedNode) {
+      if (overviewGraphHighlightedNode === item) {
         // 点击已高亮的节点时取消变暗效果并恢复全屏
         graph.getNodes().forEach((node) => {
           graph.setItemState(node, "dim", false);
         });
-        highlightedNode = null;
+        overviewGraphHighlightedNode = null;
         overviewGraphColSpan.value = 24;
       } else {
         // 点击其他节点时切换高亮状态
@@ -109,7 +204,9 @@ function createOverviewGragh(containerId) {
             graph.setItemState(node, "dim", false);
           }
         });
-        highlightedNode = item;
+        overviewGraphHighlightedNode = item;
+        // 更新 detail graph 内容
+        updateDetailGraph();
       }
     } else {
       // 首次点击节点时使其他节点变暗并移到左边
@@ -118,7 +215,7 @@ function createOverviewGragh(containerId) {
           graph.setItemState(node, "dim", true);
         }
       });
-      highlightedNode = item;
+      overviewGraphHighlightedNode = item;
       overviewGraphColSpan.value = 16;
     }
   });
@@ -150,61 +247,11 @@ function createOverviewGragh(containerId) {
   return graph;
 }
 
-function nodeTypeToShape(type) {
-  switch (type) {
-    case "host":
-      return "diamond";
-    case "app":
-      return "rect";
-    default:
-      return "circle";
-  }
-}
-
 onMounted(() => {
-  axios
-    .post("http://10.0.0.236:8000/api/parser/", {
-      start_time: "2023-04-03T00:00:00.000Z",
-      end_time: "2023-04-06T00:00:00.000Z",
-      ip: "10.0.0.47",
-      hostname: "10-0-0-47",
-      level: "holistic",
-      demo: false,
-    })
-    .then((res) => {
-      const graphData = {
-        nodes: res.data.graph.nodes.map((node) => ({
-          ...node,
-          node_type: node.type,
-          type: nodeTypeToShape(node.type),
-        })),
-        edges: res.data.graph.edges,
-      };
-      console.log(graphData);
-      overviewGraph = createOverviewGragh("overview-graph");
-      overviewGraph.data(graphData);
-      overviewGraph.render();
-    });
+  updateOverviewGraph();
 });
 
 // detail graph
-const data2 = {
-  nodes: [
-    { id: "node11", label: "Node 1", size: 50, type: "rect" },
-    { id: "node12", label: "Node 2", size: 50, type: "diamond" },
-    { id: "node13", label: "Node 3", size: 50, type: "ellipse" },
-    { id: "node14", label: "Node 4", size: 50, type: "ellipse" },
-    { id: "node15", label: "Node 5", size: 60, type: "ellipse" },
-  ],
-  edges: [
-    { source: "node11", target: "node12", ts: 114514 },
-    { source: "node12", target: "node13", ts: 1919810 },
-    { source: "node13", target: "node14", ts: 7777777 },
-    { source: "node14", target: "node15", ts: 6324 },
-    { source: "node15", target: "node11", ts: 12306 },
-  ],
-};
-
 let detailGraph = null;
 let detailGraphContainer = null;
 const detailGraphColSpan = computed(() => {
@@ -214,12 +261,12 @@ const detailGraphColSpan = computed(() => {
 watch(detailGraphColSpan, (val) => {
   if (val > 0) {
     nextTick(() => {
-      detailGraph = createDetailGragh("detail-graph");
-      detailGraph.data(data2);
-      detailGraph.render();
+      updateDetailGraph();
     });
   } else {
-    detailGraph.destroy();
+    nextTick(() => {
+      detailGraph.destroy();
+    });
   }
 });
 function createDetailGragh(containerId) {
@@ -240,7 +287,7 @@ function createDetailGragh(containerId) {
       edgeStrength: 0.5,
     },
     defaultNode: {
-      size: 20,
+      size: 30,
       style: {
         lineWidth: 2,
         fill: "#C6E5FF",
@@ -254,7 +301,7 @@ function createDetailGragh(containerId) {
     },
     defaultEdge: {
       style: {
-        stroke: "#3F3F3F",
+        stroke: "#C0C4CC",
         lineWidth: 2,
         endArrow: true,
       },
@@ -266,57 +313,13 @@ function createDetailGragh(containerId) {
         getContent(evt) {
           const { item } = evt;
           const model = item.getModel();
-          if (model.id.startsWith("edge")) {
-            return `<div>
-                      <p>Timestamp: ${model.ts}</p>
-                    </div>`;
-          } else {
-            return `<div>
-                      <p>ID: ${model.id}</p>
-                      <p>Label: ${model.label}</p>
-                      <p>Size: ${model.size}</p>
-                    </div>`;
-          }
+          return getTooltip(model);
         },
         offsetX: 10,
         offsetY: 20,
         itemTypes: ["node", "edge"],
       }),
     ],
-  });
-
-  // 高亮
-  let highlightedNode = null;
-  graph.on("node:click", (evt) => {
-    const { item } = evt;
-
-    if (highlightedNode) {
-      if (highlightedNode === item) {
-        // 点击已高亮的节点时取消变暗效果
-        graph.getNodes().forEach((node) => {
-          graph.setItemState(node, "dim", false);
-        });
-        highlightedNode = null;
-      } else {
-        // 点击其他节点时切换高亮状态
-        graph.getNodes().forEach((node) => {
-          if (node !== item) {
-            graph.setItemState(node, "dim", true);
-          } else {
-            graph.setItemState(node, "dim", false);
-          }
-        });
-        highlightedNode = item;
-      }
-    } else {
-      // 首次点击节点时使其他节点变暗
-      graph.getNodes().forEach((node) => {
-        if (node !== item) {
-          graph.setItemState(node, "dim", true);
-        }
-      });
-      highlightedNode = item;
-    }
   });
 
   // 重新布局
@@ -348,14 +351,30 @@ function createDetailGragh(containerId) {
 </script>
 
 <template>
-  <el-container style="height: 100%">
+  <el-container v-loading.lock="loading" style="height: 100%">
     <el-main style="height: 100%; overflow-y: hidden">
       <el-row style="height: 100%">
         <el-col :span="overviewGraphColSpan">
           <div id="overview-graph" style="width: 100%; height: 100%"></div>
         </el-col>
         <el-col :span="detailGraphColSpan">
-          <div id="detail-graph" style="width: 100%; height: 100%"></div>
+          <el-card
+            style="height: 100%"
+            :body-style="{
+              height: '100%',
+              padding: 0,
+            }"
+          >
+            <template #header>
+              <div class="card-header">
+                <span>告警信息</span>
+                <el-button @click="closeDetailGraph">
+                  <el-icon color="#F56C6C"><CloseBold /></el-icon>
+                </el-button>
+              </div>
+            </template>
+            <div id="detail-graph" style="width: 100%; height: 100%"></div>
+          </el-card>
         </el-col>
       </el-row>
     </el-main>
@@ -363,8 +382,9 @@ function createDetailGragh(containerId) {
 </template>
 
 <style>
-.el-card__body {
-  height: 100%;
-  padding: 0;
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 </style>
