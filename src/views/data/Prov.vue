@@ -74,35 +74,47 @@ function updateOverviewGraph() {
       overviewGraph = createOverviewGragh("overview-graph");
       overviewGraph.data(graphData);
       overviewGraph.render();
+    })
+    .finally(() => {
       loading.value = false;
     });
 }
 
-function updateDetailGraph() {
+function updateDetailGraph(type) {
   loading.value = true;
-  axios
-    .post("http://10.0.0.236:8000/api/parser/", {
-      start_time: "2023-04-04T10:19:00.00Z",
-      end_time: "2023-04-04T10:23:17.00Z",
-      ip: "10.0.0.193",
-      hostname: "",
-      level: "alert",
-      demo: true,
-    })
-    .then((res) => {
-      const graphData = {
-        nodes: res.data.graph.nodes.map((node) => ({
-          ...node,
-          node_type: node.type,
-          type: nodeTypeToShape(node.type),
-        })),
-        edges: res.data.graph.edges,
-      };
-      detailGraph = createDetailGragh("detail-graph");
-      detailGraph.data(graphData);
-      detailGraph.render();
-      loading.value = false;
-    });
+  if (detailGraph) {
+    detailGraph.destroy();
+  }
+  // NOTE: 如果有必要，可以把之前的结果都缓存下来，避免重复发送请求
+  if (type === "alert") {
+    axios
+      .post("http://10.0.0.236:8000/api/parser/", {
+        start_time: "2023-04-04T10:19:00.00Z",
+        end_time: "2023-04-04T10:23:17.00Z",
+        ip: "10.0.0.193",
+        hostname: "",
+        level: "alert",
+        demo: true,
+      })
+      .then((res) => {
+        const graphData = {
+          nodes: res.data.graph.nodes.map((node) => ({
+            ...node,
+            node_type: node.type,
+            type: nodeTypeToShape(node.type),
+          })),
+          edges: res.data.graph.edges,
+        };
+        detailGraph = createDetailGragh("detail-graph");
+        detailGraph.data(graphData);
+        detailGraph.render();
+      })
+      .finally(() => {
+        loading.value = false;
+      });
+  } else {
+    loading.value = false;
+  }
 }
 
 // overview graph
@@ -252,20 +264,29 @@ onMounted(() => {
 });
 
 // detail graph
+const detailGraphSelected = ref("alert");
+const detailGraphOptions = ref([
+  { label: "告警信息", value: "alert" },
+  { label: "应用信息", value: "app" },
+  { label: "容器信息", value: "docker" },
+  { label: "审计溯源图", value: "audit" },
+]);
+watch(detailGraphSelected, (cur) => {
+  nextTick(() => {
+    updateDetailGraph(cur);
+  });
+});
+
 let detailGraph = null;
 let detailGraphContainer = null;
 const detailGraphColSpan = computed(() => {
   return 24 - overviewGraphColSpan.value;
 });
-
 watch(detailGraphColSpan, (val) => {
   if (val > 0) {
     nextTick(() => {
-      updateDetailGraph();
-    });
-  } else {
-    nextTick(() => {
-      detailGraph.destroy();
+      // 默认展示告警图
+      updateDetailGraph("alert");
     });
   }
 });
@@ -367,7 +388,14 @@ function createDetailGragh(containerId) {
           >
             <template #header>
               <div class="card-header">
-                <span>告警信息</span>
+                <el-select v-model="detailGraphSelected" size="large">
+                  <el-option
+                    v-for="option in detailGraphOptions"
+                    :key="option.value"
+                    :label="option.label"
+                    :value="option.value"
+                  />
+                </el-select>
                 <el-button @click="closeDetailGraph">
                   <el-icon color="#F56C6C"><CloseBold /></el-icon>
                 </el-button>
