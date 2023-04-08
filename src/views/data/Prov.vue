@@ -19,12 +19,14 @@ function nodeTypeToShape(type) {
 }
 
 function getTooltip(model) {
-  if (model.id.startsWith("edge")) {
-    if (model.ts) {
+  console.log(model);
+  // 边
+  if (model.hasOwnProperty("source") && model.hasOwnProperty("target")) {
+    if (model.hasOwnProperty("ts")) {
       return `<div>
                 <p>timestamp: ${model.ts}</p>
               </div>`;
-    } else if (model.access) {
+    } else if (model.hasOwnProperty("access")) {
       return `<div>
                 <p>access: ${model.access}</p>
               </div>`;
@@ -51,14 +53,14 @@ function getTooltip(model) {
   }
 }
 
-function updateOverviewGraph() {
+function updateOverviewGraph(start, end, ip) {
   loading.value = true;
   axios
     .post("http://10.0.0.236:8000/api/parser/", {
-      start_time: "2023-04-03T00:00:00.000Z",
-      end_time: "2023-04-06T00:00:00.000Z",
-      ip: "10.0.0.47",
-      hostname: "10-0-0-47",
+      start_time: start.toISOString(),
+      end_time: end.toISOString(),
+      ip: ip,
+      hostname: ip.replaceAll(".", "-"),
       level: "holistic",
       demo: false,
     })
@@ -69,8 +71,13 @@ function updateOverviewGraph() {
           node_type: node.type,
           type: nodeTypeToShape(node.type),
         })),
-        edges: res.data.graph.edges,
+        edges: res.data.graph.edges.map((edge) => ({
+          ...edge,
+          label: edge.access,
+        })),
       };
+      // multiple edges support
+      G6.Util.processParallelEdges(graphData.edges);
       overviewGraph = createOverviewGragh("overview-graph");
       overviewGraph.data(graphData);
       overviewGraph.render();
@@ -105,9 +112,11 @@ function updateDetailGraph(type) {
           })),
           edges: res.data.graph.edges,
         };
-        detailGraph = createDetailGragh("detail-graph");
-        detailGraph.data(graphData);
-        detailGraph.render();
+        nextTick(() => {
+          detailGraph = createDetailGragh("detail-graph");
+          detailGraph.data(graphData);
+          detailGraph.render();
+        });
       })
       .finally(() => {
         loading.value = false;
@@ -118,6 +127,74 @@ function updateDetailGraph(type) {
 }
 
 // overview graph
+const overviewGraphIp = ref("");
+const overviewGraphTimeRange = ref("");
+const overviewGraphTimeRangeShortcuts = [
+  {
+    text: "Last 1h",
+    value: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 3600 * 1000 * 1);
+      return [start, end];
+    },
+  },
+  {
+    text: "Last 6h",
+    value: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 3600 * 1000 * 6);
+      return [start, end];
+    },
+  },
+  {
+    text: "Last 12h",
+    value: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 3600 * 1000 * 12);
+      return [start, end];
+    },
+  },
+  {
+    text: "Last Day",
+    value: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 3600 * 1000 * 24);
+      return [start, end];
+    },
+  },
+  {
+    text: "Last week",
+    value: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+      return [start, end];
+    },
+  },
+  {
+    text: "Last month",
+    value: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+      return [start, end];
+    },
+  },
+];
+const search = () => {
+  if (overviewGraphTimeRange.value && overviewGraphIp.value) {
+    updateOverviewGraph(
+      overviewGraphTimeRange.value[0],
+      overviewGraphTimeRange.value[1],
+      overviewGraphIp.value
+    );
+  }
+};
+
 let overviewGraph = null;
 let overviewGraphContainer = null;
 let overviewGraphHighlightedNode = null;
@@ -152,12 +229,11 @@ function createOverviewGragh(containerId) {
       default: ["drag-canvas", "zoom-canvas", "drag-node"],
     },
     layout: {
-      type: "force",
+      type: "gForce",
       preventOverlap: true,
       linkDistance: (d) => {
         return 100 + (d.source.size + d.target.size) / 2;
       },
-      edgeStrength: 0.5,
     },
     defaultNode: {
       size: 30,
@@ -173,6 +249,9 @@ function createOverviewGragh(containerId) {
       },
     },
     defaultEdge: {
+      labelCfg: {
+        autoRotate: true,
+      },
       style: {
         stroke: "#C0C4CC",
         lineWidth: 2,
@@ -180,6 +259,7 @@ function createOverviewGragh(containerId) {
       },
     },
     maxZoom: 1.2, // 最大缩放比例
+    linkCenter: true,
     // 启用tooltip
     plugins: [
       new G6.Tooltip({
@@ -260,7 +340,17 @@ function createOverviewGragh(containerId) {
 }
 
 onMounted(() => {
-  updateOverviewGraph();
+  // last day
+  const end = new Date();
+  const start = new Date();
+  start.setTime(start.getTime() - 3600 * 1000 * 24);
+  overviewGraphTimeRange.value = [start, end];
+  overviewGraphIp.value = "10.0.0.47";
+  updateOverviewGraph(
+    overviewGraphTimeRange.value[0],
+    overviewGraphTimeRange.value[1],
+    overviewGraphIp.value
+  );
 });
 
 // detail graph
@@ -324,10 +414,11 @@ function createDetailGragh(containerId) {
       style: {
         stroke: "#C0C4CC",
         lineWidth: 2,
-        endArrow: true,
+        // endArrow: true,
       },
     },
     maxZoom: 1.2, // 最大缩放比例
+    linkCenter: true,
     // 启用tooltip
     plugins: [
       new G6.Tooltip({
@@ -338,7 +429,7 @@ function createDetailGragh(containerId) {
         },
         offsetX: 10,
         offsetY: 20,
-        itemTypes: ["node", "edge"],
+        itemTypes: ["node"],
       }),
     ],
   });
@@ -373,6 +464,25 @@ function createDetailGragh(containerId) {
 
 <template>
   <el-container v-loading.lock="loading" style="height: 100%">
+    <el-header>
+      <el-input v-model="overviewGraphIp" placeholder="请输入 ip" clearable>
+        <template #prepend>
+          <el-date-picker
+            v-model="overviewGraphTimeRange"
+            type="datetimerange"
+            :shortcuts="overviewGraphTimeRangeShortcuts"
+            range-separator="-"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+          />
+        </template>
+        <template #append>
+          <el-button>
+            <el-icon type="primary" @click="search"><Search /></el-icon>
+          </el-button>
+        </template>
+      </el-input>
+    </el-header>
     <el-main style="height: 100%; overflow-y: hidden">
       <el-row style="height: 100%">
         <el-col :span="overviewGraphColSpan">
@@ -410,6 +520,10 @@ function createDetailGragh(containerId) {
 </template>
 
 <style>
+.el-input-group__prepend {
+  padding: 0;
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
