@@ -19,7 +19,6 @@ function nodeTypeToShape(type) {
 }
 
 function getTooltip(model) {
-  console.log(model);
   // 边
   if (model.hasOwnProperty("source") && model.hasOwnProperty("target")) {
     if (model.hasOwnProperty("ts")) {
@@ -287,18 +286,6 @@ function createOverviewGragh(containerId) {
         });
         overviewGraphHighlightedNode = null;
         overviewGraphColSpan.value = 24;
-      } else {
-        // 点击其他节点时切换高亮状态
-        graph.getNodes().forEach((node) => {
-          if (node !== item) {
-            graph.setItemState(node, "dim", true);
-          } else {
-            graph.setItemState(node, "dim", false);
-          }
-        });
-        overviewGraphHighlightedNode = item;
-        // 更新 detail graph 内容
-        updateDetailGraph();
       }
     } else {
       // 首次点击节点时使其他节点变暗并移到左边
