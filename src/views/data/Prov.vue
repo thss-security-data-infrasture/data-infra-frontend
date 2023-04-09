@@ -3,6 +3,7 @@ import G6 from "@antv/g6";
 import axios from "axios";
 
 import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { ElMessage } from "element-plus";
 
 // tools
 const loading = ref(false);
@@ -61,7 +62,7 @@ function updateOverviewGraph(start, end, ip) {
       ip: ip,
       hostname: ip.replaceAll(".", "-"),
       level: "holistic",
-      demo: false,
+      demo: true,
     })
     .then((res) => {
       const graphData = {
@@ -86,7 +87,7 @@ function updateOverviewGraph(start, end, ip) {
     });
 }
 
-function updateDetailGraph(type) {
+function updateDetailGraph(type, start, end, ip) {
   loading.value = true;
   if (detailGraph) {
     detailGraph.destroy();
@@ -95,11 +96,11 @@ function updateDetailGraph(type) {
   if (type === "alert") {
     axios
       .post("http://10.0.0.236:8000/api/parser/", {
-        start_time: "2023-04-04T10:19:00.00Z",
-        end_time: "2023-04-04T10:23:17.00Z",
-        ip: "10.0.0.193",
-        hostname: "",
-        level: "alert",
+        start_time: start.toISOString(),
+        end_time: end.toISOString(),
+        ip: ip,
+        hostname: ip.replaceAll(".", "-"),
+        level: type,
         demo: true,
       })
       .then((res) => {
@@ -185,7 +186,21 @@ const overviewGraphTimeRangeShortcuts = [
   },
 ];
 const search = () => {
-  if (overviewGraphTimeRange.value && overviewGraphIp.value) {
+  if (!overviewGraphTimeRange.value) {
+    ElMessage({
+      message: "请选择时间范围",
+      type: "warning",
+      grouping: true,
+      showClose: true,
+    });
+  } else if (!overviewGraphIp.value) {
+    ElMessage({
+      message: "请输入 IP",
+      type: "warning",
+      grouping: true,
+      showClose: true,
+    });
+  } else {
     updateOverviewGraph(
       overviewGraphTimeRange.value[0],
       overviewGraphTimeRange.value[1],
@@ -350,7 +365,13 @@ const detailGraphOptions = ref([
 ]);
 watch(detailGraphSelected, (cur) => {
   nextTick(() => {
-    updateDetailGraph(cur);
+    updateDetailGraph(
+      cur,
+      overviewGraphTimeRange.value[0],
+      overviewGraphTimeRange.value[1],
+      overviewGraphHighlightedNode.getModel().ip ??
+        overviewGraphHighlightedNode.getModel().id
+    );
   });
 });
 
@@ -363,7 +384,13 @@ watch(detailGraphColSpan, (val) => {
   if (val > 0) {
     nextTick(() => {
       // 默认展示告警图
-      updateDetailGraph("alert");
+      updateDetailGraph(
+        "alert",
+        overviewGraphTimeRange.value[0],
+        overviewGraphTimeRange.value[1],
+        overviewGraphHighlightedNode.getModel().ip ??
+          overviewGraphHighlightedNode.getModel().id
+      );
     });
   }
 });
@@ -452,23 +479,27 @@ function createDetailGragh(containerId) {
 <template>
   <el-container v-loading.lock="loading" style="height: 100%">
     <el-header>
-      <el-input v-model="overviewGraphIp" placeholder="请输入 ip" clearable>
-        <template #prepend>
-          <el-date-picker
-            v-model="overviewGraphTimeRange"
-            type="datetimerange"
-            :shortcuts="overviewGraphTimeRangeShortcuts"
-            range-separator="-"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
-          />
-        </template>
-        <template #append>
-          <el-button>
-            <el-icon type="primary" @click="search"><Search /></el-icon>
-          </el-button>
-        </template>
-      </el-input>
+      <el-row>
+        <el-col :span="16">
+          <el-input v-model="overviewGraphIp" placeholder="请输入 ip" clearable>
+            <template #prepend>
+              <el-date-picker
+                v-model="overviewGraphTimeRange"
+                type="datetimerange"
+                :shortcuts="overviewGraphTimeRangeShortcuts"
+                range-separator="-"
+                start-placeholder="开始时间"
+                end-placeholder="结束时间"
+              />
+            </template>
+            <template #append>
+              <el-button>
+                <el-icon type="primary" @click="search"><Search /></el-icon>
+              </el-button>
+            </template>
+          </el-input>
+        </el-col>
+      </el-row>
     </el-header>
     <el-main style="height: 100%; overflow-y: hidden">
       <el-row style="height: 100%">
