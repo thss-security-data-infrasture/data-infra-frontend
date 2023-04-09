@@ -44,9 +44,15 @@ function getTooltip(model) {
     }
   } else {
     if (model.node_type === "host") {
-      return `<div>
-                <p>ip: ${model.ip}</p>
-              </div>`;
+      if (model.hasOwnProperty("ip")) {
+        return `<div>
+                  <p>ip: ${model.ip}</p>
+                </div>`;
+      } else {
+        return `<div>
+                  <p>id: ${model.id}</p>
+                </div>`;
+      }
     } else if (model.node_type === "app") {
       return `<div>
                 <p>id: ${model.id}</p>
@@ -74,7 +80,7 @@ function updateOverviewGraph(start, end, ip) {
       ip: ip,
       hostname: "",
       level: "holistic",
-      demo: true,
+      demo: false,
     })
     .then((res) => {
       const graphData = {
@@ -96,10 +102,11 @@ function updateOverviewGraph(start, end, ip) {
         }
         overviewGraph.data(graphData);
         overviewGraph.render();
-        // TODO: 暂时不知道这个 render 是怎么回事，多等 2.5s 让他布局好
+        // FIXME: 暂时不知道这个 render 是怎么回事，似乎数量太多时渲染布局会出问题
+        // 每一条边等 5ms，从观察来看，500 条边延迟 2500ms 比较合适
         setTimeout(() => {
           loading.value = false;
-        }, 2500);
+        }, graphData.edges.length * 5);
       });
     })
     .catch(() => {
@@ -121,7 +128,7 @@ function updateDetailGraph(type, start, end, ip) {
         ip: ip,
         hostname: "",
         level: type,
-        demo: true,
+        demo: false,
       })
       .then((res) => {
         const graphData = {
@@ -301,7 +308,7 @@ function createOverviewGragh(containerId) {
         },
       },
     },
-    maxZoom: 1.2, // 最大缩放比例
+    maxZoom: 1.5, // 最大缩放比例
     linkCenter: true,
     // 启用tooltip
     plugins: [
@@ -374,9 +381,9 @@ onMounted(() => {
   // last day
   const end = new Date();
   const start = new Date();
-  start.setTime(start.getTime() - 3600 * 1000 * 24);
+  start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
   overviewGraphTimeRange.value = [start, end];
-  overviewGraphIp.value = "10.0.0.47";
+  overviewGraphIp.value = "10.0.0.193";
   updateOverviewGraph(
     overviewGraphTimeRange.value[0],
     overviewGraphTimeRange.value[1],
@@ -457,7 +464,7 @@ function createDetailGragh(containerId) {
         lineWidth: 2,
       },
     },
-    maxZoom: 1.2, // 最大缩放比例
+    maxZoom: 1.5, // 最大缩放比例
     linkCenter: true,
     // 启用tooltip
     plugins: [
