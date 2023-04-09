@@ -19,6 +19,15 @@ function nodeTypeToShape(type) {
   }
 }
 
+function nodeTypeToColor(type) {
+  switch (type) {
+    case "alert":
+      return "#FCBBC1";
+    default:
+      return "#C6E5FF";
+  }
+}
+
 function getTooltip(model) {
   // 边
   if (model.hasOwnProperty("source") && model.hasOwnProperty("target")) {
@@ -55,12 +64,15 @@ function getTooltip(model) {
 
 function updateOverviewGraph(start, end, ip) {
   loading.value = true;
+  if (overviewGraph) {
+    overviewGraph.clear();
+  }
   axios
     .post("http://10.0.0.236:8000/api/parser/", {
       start_time: start.toISOString(),
       end_time: end.toISOString(),
       ip: ip,
-      hostname: ip.replaceAll(".", "-"),
+      hostname: "",
       level: "holistic",
       demo: true,
     })
@@ -78,11 +90,19 @@ function updateOverviewGraph(start, end, ip) {
       };
       // multiple edges support
       G6.Util.processParallelEdges(graphData.edges);
-      overviewGraph = createOverviewGragh("overview-graph");
-      overviewGraph.data(graphData);
-      overviewGraph.render();
+      nextTick(() => {
+        if (!overviewGraph) {
+          overviewGraph = createOverviewGragh("overview-graph");
+        }
+        overviewGraph.data(graphData);
+        overviewGraph.render();
+        // TODO: 暂时不知道这个 render 是怎么回事，多等 2.5s 让他布局好
+        setTimeout(() => {
+          loading.value = false;
+        }, 2500);
+      });
     })
-    .finally(() => {
+    .catch(() => {
       loading.value = false;
     });
 }
@@ -90,7 +110,7 @@ function updateOverviewGraph(start, end, ip) {
 function updateDetailGraph(type, start, end, ip) {
   loading.value = true;
   if (detailGraph) {
-    detailGraph.destroy();
+    detailGraph.clear();
   }
   // NOTE: 如果有必要，可以把之前的结果都缓存下来，避免重复发送请求
   if (type === "alert") {
@@ -99,7 +119,7 @@ function updateDetailGraph(type, start, end, ip) {
         start_time: start.toISOString(),
         end_time: end.toISOString(),
         ip: ip,
-        hostname: ip.replaceAll(".", "-"),
+        hostname: "",
         level: type,
         demo: true,
       })
@@ -109,11 +129,17 @@ function updateDetailGraph(type, start, end, ip) {
             ...node,
             node_type: node.type,
             type: nodeTypeToShape(node.type),
+            style: {
+              fill: nodeTypeToColor(node.type),
+              opacity: 0.8,
+            },
           })),
           edges: res.data.graph.edges,
         };
         nextTick(() => {
-          detailGraph = createDetailGragh("detail-graph");
+          if (!detailGraph) {
+            detailGraph = createDetailGragh("detail-graph");
+          }
           detailGraph.data(graphData);
           detailGraph.render();
         });
@@ -269,7 +295,10 @@ function createOverviewGragh(containerId) {
       style: {
         stroke: "#C0C4CC",
         lineWidth: 2,
-        endArrow: true,
+        endArrow: {
+          path: G6.Arrow.triangle(3, 5, 15),
+          d: 15,
+        },
       },
     },
     maxZoom: 1.2, // 最大缩放比例
@@ -412,11 +441,9 @@ function createDetailGragh(containerId) {
       edgeStrength: 0.5,
     },
     defaultNode: {
-      size: 30,
+      size: 60,
       style: {
         lineWidth: 2,
-        fill: "#C6E5FF",
-        stroke: "#5B8FF9",
       },
       stateStyles: {
         dim: {
@@ -428,7 +455,6 @@ function createDetailGragh(containerId) {
       style: {
         stroke: "#C0C4CC",
         lineWidth: 2,
-        // endArrow: true,
       },
     },
     maxZoom: 1.2, // 最大缩放比例
