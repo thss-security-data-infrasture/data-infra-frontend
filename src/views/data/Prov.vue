@@ -9,22 +9,20 @@ import { ElMessage } from "element-plus";
 const loading = ref(false);
 
 function nodeTypeToShape(type) {
-  switch (type) {
-    case "host":
-      return "diamond";
-    case "app":
-      return "rect";
-    default:
-      return "circle";
+  if (type === "host") {
+    return "diamond";
+  } else if (type === "app") {
+    return "rect";
+  } else {
+    return "circle";
   }
 }
 
 function nodeTypeToColor(type) {
-  switch (type) {
-    case "alert":
-      return "#FCBBC1";
-    default:
-      return "#C6E5FF";
+  if (type === "alert") {
+    return "#FCBBC1";
+  } else {
+    return "#C6E5FF";
   }
 }
 
@@ -200,7 +198,7 @@ const overviewGraphTimeRangeShortcuts = [
     },
   },
   {
-    text: "Last week",
+    text: "Last Week",
     value: () => {
       const end = new Date();
       const start = new Date();
@@ -209,7 +207,7 @@ const overviewGraphTimeRangeShortcuts = [
     },
   },
   {
-    text: "Last month",
+    text: "Last Month",
     value: () => {
       const end = new Date();
       const start = new Date();
@@ -222,13 +220,6 @@ const search = () => {
   if (!overviewGraphTimeRange.value) {
     ElMessage({
       message: "请选择时间范围",
-      type: "warning",
-      grouping: true,
-      showClose: true,
-    });
-  } else if (!overviewGraphIp.value) {
-    ElMessage({
-      message: "请输入 IP",
       type: "warning",
       grouping: true,
       showClose: true,
