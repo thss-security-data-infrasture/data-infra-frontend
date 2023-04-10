@@ -37,6 +37,7 @@ function getTooltip(model) {
       if (model.hasOwnProperty("ip")) {
         return `<div>
                   <p>ip: ${model.ip}</p>
+                  <p>alerts: ${model.alerts}</p>
                 </div>`;
       } else {
         return `<div>
@@ -63,15 +64,25 @@ function updateOverviewGraph(start, end, ip) {
   if (overviewGraph) {
     overviewGraph.clear();
   }
+  const payload = {
+    start_time: start.toISOString(),
+    end_time: end.toISOString(),
+    ip: "",
+    ip_list: [],
+    hostname: "",
+    level: "holistic",
+    demo: false,
+  };
+  if (ip !== "") {
+    const ipList = ip.split(",");
+    if (ipList.length === 1) {
+      payload.ip = ipList[0];
+    } else {
+      payload.ip_list = ipList;
+    }
+  }
   axios
-    .post("http://10.0.0.236:8000/api/parser/", {
-      start_time: start.toISOString(),
-      end_time: end.toISOString(),
-      ip: ip,
-      hostname: "",
-      level: "holistic",
-      demo: false,
-    })
+    .post("http://10.0.0.236:8000/api/parser/", payload)
     .then((res) => {
       const graphData = {
         nodes: res.data.graph.nodes.map((node) => {
@@ -124,6 +135,7 @@ function updateDetailGraph(type, start, end, ip) {
         start_time: start.toISOString(),
         end_time: end.toISOString(),
         ip: ip,
+        ip_list: [],
         hostname: "",
         level: type,
         demo: false,
@@ -509,7 +521,11 @@ function createDetailGragh(containerId) {
     <el-header>
       <el-row>
         <el-col :span="16">
-          <el-input v-model="overviewGraphIp" placeholder="请输入 ip" clearable>
+          <el-input
+            v-model="overviewGraphIp"
+            placeholder="请输入 ip，多个 ip 请用 , 分隔"
+            clearable
+          >
             <template #prepend>
               <el-date-picker
                 v-model="overviewGraphTimeRange"
