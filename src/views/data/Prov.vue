@@ -18,14 +18,6 @@ function nodeTypeToShape(type) {
   }
 }
 
-function nodeTypeToColor(type) {
-  if (type === "alert") {
-    return "#FCBBC1";
-  } else {
-    return "#C6E5FF";
-  }
-}
-
 function getTooltip(model) {
   // 边
   if (model.hasOwnProperty("source") && model.hasOwnProperty("target")) {
@@ -82,11 +74,19 @@ function updateOverviewGraph(start, end, ip) {
     })
     .then((res) => {
       const graphData = {
-        nodes: res.data.graph.nodes.map((node) => ({
-          ...node,
-          node_type: node.type,
-          type: nodeTypeToShape(node.type),
-        })),
+        nodes: res.data.graph.nodes.map((node) => {
+          const newNode = {
+            ...node,
+            node_type: node.type,
+            type: nodeTypeToShape(node.type),
+          };
+          if (node.alerts > 0) {
+            newNode["style"] = {
+              fill: "#FCBBC1",
+            };
+          }
+          return newNode;
+        }),
         edges: res.data.graph.edges.map((edge) => ({
           ...edge,
           label: edge.access,
@@ -130,15 +130,19 @@ function updateDetailGraph(type, start, end, ip) {
       })
       .then((res) => {
         const graphData = {
-          nodes: res.data.graph.nodes.map((node) => ({
-            ...node,
-            node_type: node.type,
-            type: nodeTypeToShape(node.type),
-            style: {
-              fill: nodeTypeToColor(node.type),
-              opacity: 0.8,
-            },
-          })),
+          nodes: res.data.graph.nodes.map((node) => {
+            const newNode = {
+              ...node,
+              node_type: node.type,
+              type: nodeTypeToShape(node.type),
+            };
+            if (node.type === "alert") {
+              newNode["style"] = {
+                fill: "#FCBBC1",
+              };
+            }
+            return newNode;
+          }),
           edges: res.data.graph.edges,
         };
         nextTick(() => {
@@ -439,7 +443,7 @@ function createDetailGragh(containerId) {
       edgeStrength: 0.5,
     },
     defaultNode: {
-      size: 60,
+      size: 30,
       style: {
         lineWidth: 2,
       },
