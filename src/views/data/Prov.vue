@@ -233,7 +233,7 @@ const overviewGraphTimeRangeShortcuts = [
     },
   },
 ];
-const search = () => {
+function search() {
   if (!overviewGraphTimeRange.value) {
     ElMessage({
       message: "请选择时间范围",
@@ -242,13 +242,14 @@ const search = () => {
       showClose: true,
     });
   } else {
+    closeDetailGraph();
     updateOverviewGraph(
       overviewGraphTimeRange.value[0],
       overviewGraphTimeRange.value[1],
       overviewGraphIp.value
     );
   }
-};
+}
 
 let overviewGraph = null;
 let overviewGraphContainer = null;
@@ -265,14 +266,14 @@ watch(overviewGraphColSpan, () => {
   });
 });
 
-const closeDetailGraph = () => {
+function closeDetailGraph() {
   // 取消变暗效果并恢复全屏
   overviewGraph.getNodes().forEach((node) => {
     overviewGraph.setItemState(node, "dim", false);
   });
   overviewGraphHighlightedNode = null;
   overviewGraphColSpan.value = 24;
-};
+}
 
 function createOverviewGragh(containerId) {
   overviewGraphContainer = document.getElementById(containerId);
