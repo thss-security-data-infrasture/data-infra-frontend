@@ -1,6 +1,7 @@
 <script setup>
 import G6 from "@antv/g6";
 import axios from "axios";
+import svgPanZoom from "svg-pan-zoom";
 
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
@@ -516,6 +517,34 @@ function createDetailGragh(containerId) {
 
   return graph;
 }
+
+function createNewEmbed(src) {
+  const embed = document.createElement("embed");
+  embed.setAttribute(
+    "style",
+    "width: 500px; height: 500px; border:1px solid black;"
+  );
+  embed.setAttribute("type", "image/svg+xml");
+  embed.setAttribute("src", src);
+
+  document.getElementById("audit-graph").appendChild(embed);
+
+  embed.addEventListener("load", function () {
+    svgPanZoom(embed, {
+      zoomEnabled: true,
+      controlIconsEnabled: true,
+      fit: true,
+      center: true,
+      maxZoom: 999,
+    });
+  });
+
+  return embed;
+}
+
+onMounted(() => {
+  createNewEmbed("/audit.svg");
+});
 </script>
 
 <template>
@@ -579,6 +608,7 @@ function createDetailGragh(containerId) {
           </el-card>
         </el-col>
       </el-row>
+      <div id="audit-graph"></div>
     </el-main>
   </el-container>
 </template>
