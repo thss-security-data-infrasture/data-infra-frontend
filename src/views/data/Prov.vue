@@ -163,9 +163,10 @@ function updateDetailGraph(type, start, end, ip) {
           }
           detailGraph.data(graphData);
           detailGraph.render();
+          loading.value = false;
         });
       })
-      .finally(() => {
+      .catch(() => {
         loading.value = false;
       });
   } else {
