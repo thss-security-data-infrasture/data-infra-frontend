@@ -407,18 +407,21 @@ const detailGraphOptions = ref([
   { label: "告警信息", value: "alert" },
   { label: "应用信息", value: "app" },
   { label: "容器信息", value: "docker" },
-  { label: "审计溯源图", value: "audit" },
 ]);
 watch(detailGraphSelected, (cur) => {
-  nextTick(() => {
-    updateDetailGraph(
-      cur,
-      overviewGraphTimeRange.value[0],
-      overviewGraphTimeRange.value[1],
-      overviewGraphHighlightedNode.getModel().ip ??
-        overviewGraphHighlightedNode.getModel().id
-    );
-  });
+  if (cur === "audit") {
+    showAuditGraph.value = true;
+  } else {
+    nextTick(() => {
+      updateDetailGraph(
+        cur,
+        overviewGraphTimeRange.value[0],
+        overviewGraphTimeRange.value[1],
+        overviewGraphHighlightedNode.getModel().ip ??
+          overviewGraphHighlightedNode.getModel().id
+      );
+    });
+  }
 });
 
 let detailGraph = null;
@@ -518,18 +521,26 @@ function createDetailGragh(containerId) {
   return graph;
 }
 
+// audit graph
+const showAuditGraph = ref(false);
+function openAuditGraphDialog() {
+  showAuditGraph.value = true;
+  nextTick(() => {
+    createNewEmbed("/audit.svg");
+  });
+}
+function closeAuditGraphDialog() {
+  showAuditGraph.value = false;
+}
 function createNewEmbed(src) {
   const embed = document.createElement("embed");
-  embed.setAttribute(
-    "style",
-    "width: 500px; height: 500px; border:1px solid black;"
-  );
+  embed.setAttribute("style", "width: 100%; height: 100%; touch-action: none;");
   embed.setAttribute("type", "image/svg+xml");
   embed.setAttribute("src", src);
 
   document.getElementById("audit-graph").appendChild(embed);
 
-  embed.addEventListener("load", function () {
+  embed.addEventListener("load", () => {
     svgPanZoom(embed, {
       zoomEnabled: true,
       controlIconsEnabled: true,
@@ -541,10 +552,6 @@ function createNewEmbed(src) {
 
   return embed;
 }
-
-onMounted(() => {
-  createNewEmbed("/audit.svg");
-});
 </script>
 
 <template>
@@ -591,15 +598,22 @@ onMounted(() => {
           >
             <template #header>
               <div class="card-header">
-                <el-select v-model="detailGraphSelected" size="large">
-                  <el-option
-                    v-for="option in detailGraphOptions"
-                    :key="option.value"
-                    :label="option.label"
-                    :value="option.value"
-                  />
-                </el-select>
-                <el-button @click="closeDetailGraph">
+                <div>
+                  <el-select v-model="detailGraphSelected" size="large">
+                    <el-option
+                      v-for="option in detailGraphOptions"
+                      :key="option.value"
+                      :label="option.label"
+                      :value="option.value"
+                    />
+                  </el-select>
+                  <el-tooltip content="审计溯源图" placement="right">
+                    <el-button @click="openAuditGraphDialog" size="large">
+                      <el-icon><FullScreen /></el-icon>
+                    </el-button>
+                  </el-tooltip>
+                </div>
+                <el-button @click="closeDetailGraph" size="large">
                   <el-icon color="#F56C6C"><CloseBold /></el-icon>
                 </el-button>
               </div>
@@ -607,8 +621,15 @@ onMounted(() => {
             <div id="detail-graph" style="width: 100%; height: 100%"></div>
           </el-card>
         </el-col>
+        <el-dialog
+          v-model="showAuditGraph"
+          :before-close="closeAuditGraphDialog"
+          title="审计溯源图"
+          fullscreen
+        >
+          <div id="audit-graph" style="width: 100%; height: 100%"></div>
+        </el-dialog>
       </el-row>
-      <div id="audit-graph"></div>
     </el-main>
   </el-container>
 </template>
@@ -616,6 +637,10 @@ onMounted(() => {
 <style>
 .el-input-group__prepend {
   padding: 0;
+}
+
+.el-dialog__body {
+  height: 80%;
 }
 
 .card-header {
