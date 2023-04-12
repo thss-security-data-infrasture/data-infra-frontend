@@ -7,7 +7,7 @@ import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
 
 // tools
-const loading = ref(false);
+const overviewGraphLoading = ref(false);
 
 function nodeTypeToShape(type) {
   if (type === "host") {
@@ -61,7 +61,7 @@ function getTooltip(model) {
 }
 
 function updateOverviewGraph(start, end, ip) {
-  loading.value = true;
+  overviewGraphLoading.value = true;
   if (overviewGraph) {
     overviewGraph.clear();
   }
@@ -115,17 +115,17 @@ function updateOverviewGraph(start, end, ip) {
         // FIXME: 暂时不知道这个 render 是怎么回事，似乎数量太多时渲染布局会出问题
         // 每一条边等 5ms，从观察来看，500 条边延迟 2500ms 比较合适
         setTimeout(() => {
-          loading.value = false;
+          overviewGraphLoading.value = false;
         }, graphData.edges.length * 5);
       });
     })
     .catch(() => {
-      loading.value = false;
+      overviewGraphLoading.value = false;
     });
 }
 
 function updateDetailGraph(type, start, end, ip) {
-  loading.value = true;
+  overviewGraphLoading.value = true;
   if (detailGraph) {
     detailGraph.clear();
   }
@@ -164,14 +164,14 @@ function updateDetailGraph(type, start, end, ip) {
           }
           detailGraph.data(graphData);
           detailGraph.render();
-          loading.value = false;
+          overviewGraphLoading.value = false;
         });
       })
       .catch(() => {
-        loading.value = false;
+        overviewGraphLoading.value = false;
       });
   } else {
-    loading.value = false;
+    overviewGraphLoading.value = false;
   }
 }
 
@@ -234,7 +234,7 @@ const overviewGraphTimeRangeShortcuts = [
     },
   },
 ];
-function search() {
+function searchOverviewGraph() {
   if (!overviewGraphTimeRange.value) {
     ElMessage({
       message: "请选择时间范围",
@@ -522,15 +522,88 @@ function createDetailGragh(containerId) {
 }
 
 // audit graph
-const showAuditGraph = ref(false);
+const auditGraphLoading = ref(false);
+
+const showAuditGraphDialog = ref(false);
 function openAuditGraphDialog() {
-  showAuditGraph.value = true;
-  nextTick(() => {
-    createNewEmbed("/audit.svg");
-  });
+  showAuditGraphDialog.value = true;
+
+  auditGraphIp.value =
+    overviewGraphHighlightedNode.getModel().ip ??
+    overviewGraphHighlightedNode.getModel().id;
+  const end = new Date();
+  const start = new Date();
+  start.setTime(start.getTime() - 300 * 1000 * 24 * 7);
+  auditGraphTimeRange.value = [start, end];
+
+  searchAuditGraph();
 }
 function closeAuditGraphDialog() {
-  showAuditGraph.value = false;
+  showAuditGraphDialog.value = false;
+}
+
+const auditGraphIp = ref("");
+const auditGraphTimeRange = ref("");
+const auditGraphTimeRangeShortcuts = [
+  {
+    text: "Last 5min",
+    value: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 300 * 1000 * 6);
+      return [start, end];
+    },
+  },
+  {
+    text: "Last 15min",
+    value: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 900 * 1000 * 24);
+      return [start, end];
+    },
+  },
+  {
+    text: "Last 30min",
+    value: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 1800 * 1000 * 24 * 7);
+      return [start, end];
+    },
+  },
+  {
+    text: "Last 1h",
+    value: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+      return [start, end];
+    },
+  },
+];
+function searchAuditGraph() {
+  auditGraphLoading.value = true;
+  axios
+    .post("http://10.0.0.236:8000/api/parser/audit/svg", {
+      start_time: auditGraphTimeRange.value[0].toISOString(),
+      end_time: auditGraphTimeRange.value[1].toISOString(),
+      ip: auditGraphIp.value,
+      demo: true,
+    })
+    .then((res) => {
+      document.getElementById("audit-graph").innerHTML = "";
+      const url = URL.createObjectURL(
+        new Blob([res.data], { type: "image/svg+xml" })
+      );
+      nextTick(() => {
+        createNewEmbed(url);
+        auditGraphLoading.value = false;
+      });
+    })
+    .catch(() => {
+      auditGraphLoading.value = false;
+    });
 }
 function createNewEmbed(src) {
   const embed = document.createElement("embed");
@@ -546,22 +619,21 @@ function createNewEmbed(src) {
       controlIconsEnabled: true,
       fit: true,
       center: true,
-      maxZoom: 999,
+      maxZoom: 99999,
     });
   });
-
   return embed;
 }
 </script>
 
 <template>
-  <el-container v-loading.lock="loading" style="height: 100%">
+  <el-container v-loading.lock="overviewGraphLoading" style="height: 100%">
     <el-header>
       <el-row>
         <el-col :span="16">
           <el-input
             v-model="overviewGraphIp"
-            placeholder="请输入 ip，多个 ip 请用 , 分隔"
+            placeholder="请输入 ip，多个 ip 请用 , 分隔（可以为空）"
             clearable
           >
             <template #prepend>
@@ -576,7 +648,7 @@ function createNewEmbed(src) {
             </template>
             <template #append>
               <el-button>
-                <el-icon type="primary" @click="search"><Search /></el-icon>
+                <el-icon @click="searchOverviewGraph"><Search /></el-icon>
               </el-button>
             </template>
           </el-input>
@@ -586,7 +658,7 @@ function createNewEmbed(src) {
     <el-main style="height: 100%; overflow-y: hidden">
       <el-row style="height: 100%">
         <el-col :span="overviewGraphColSpan">
-          <div id="overview-graph" style="width: 100%; height: 100%"></div>
+          <div id="overview-graph" style="width: 100%; height: 100%" />
         </el-col>
         <el-col :span="detailGraphColSpan">
           <el-card
@@ -618,16 +690,31 @@ function createNewEmbed(src) {
                 </el-button>
               </div>
             </template>
-            <div id="detail-graph" style="width: 100%; height: 100%"></div>
+            <div id="detail-graph" style="width: 100%; height: 100%" />
           </el-card>
         </el-col>
         <el-dialog
-          v-model="showAuditGraph"
+          v-model="showAuditGraphDialog"
           :before-close="closeAuditGraphDialog"
           title="审计溯源图"
           fullscreen
         >
-          <div id="audit-graph" style="width: 100%; height: 100%"></div>
+          <el-date-picker
+            v-model="auditGraphTimeRange"
+            type="datetimerange"
+            :shortcuts="auditGraphTimeRangeShortcuts"
+            range-separator="-"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+          />
+          <el-button @click="searchAuditGraph" style="vertical-align: top">
+            <el-icon><Search /></el-icon>
+          </el-button>
+          <div
+            v-loading.lock="auditGraphLoading"
+            id="audit-graph"
+            style="width: 100%; height: 100%"
+          />
         </el-dialog>
       </el-row>
     </el-main>
