@@ -607,7 +607,7 @@ function searchAuditGraph() {
 }
 function createNewEmbed(src) {
   const embed = document.createElement("embed");
-  embed.setAttribute("style", "width: 100%; height: 100%; touch-action: none;");
+  embed.setAttribute("style", "width: 100%; height: 100%");
   embed.setAttribute("type", "image/svg+xml");
   embed.setAttribute("src", src);
 
