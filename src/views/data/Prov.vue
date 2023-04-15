@@ -1,10 +1,14 @@
 <script setup>
 import G6 from "@antv/g6";
 import axios from "axios";
+import axiosRetry from "axios-retry";
 import svgPanZoom from "svg-pan-zoom";
 
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
+
+//设置全局重试次数，避免异步操作失败，导致容器信息图不完整
+axiosRetry(axios, { retries: 3 });
 
 // tools
 const overviewGraphLoading = ref(false);
@@ -194,7 +198,9 @@ function updateDetailGraph(type, start, end, ip) {
     graphData.nodes.push(originNode);
     // 设置同步
     const promiseArr = [];
-    // 获取container
+    //是否获取结果
+    let isGetResult = [false, false, false];
+    //获取container
     const containerPromise = axios
       .post("http://10.0.0.236:8000/api/assets/docker/container", {
         host_id: ip,
@@ -208,7 +214,7 @@ function updateDetailGraph(type, start, end, ip) {
             node_type: "container",
             type: nodeTypeToShape("container"),
             style: {
-              fill: "#48B5D4",
+              fill: "#FFA3DC",
             },
           };
           return nowNode;
@@ -223,8 +229,10 @@ function updateDetailGraph(type, start, end, ip) {
         });
         graphData.nodes.push(...nowNodes);
         graphData.edges.push(...nowEdges);
+        isGetResult[0] = true;
       })
-      .catch(() => {
+      .catch((error) => {
+        console.log(error);
         overviewGraphLoading.value = false;
       });
     promiseArr.push(containerPromise);
@@ -234,31 +242,39 @@ function updateDetailGraph(type, start, end, ip) {
         host_id: ip,
       })
       .then((res) => {
-        const nowNodes = res.data.repo_tags.map((tag) => {
-          const nowNode = {
-            id: "image-" + tag,
-            ip: ip,
-            label: tag,
-            node_type: "image",
-            type: nodeTypeToShape("image"),
-            style: {
-              fill: "#5BB6EB",
-            },
-          };
-          return nowNode;
+        const nowNodes = res.data.assets.flatMap((asset) => {
+          const Node = asset.repo_tags.map((tag) => {
+            const nowNode = {
+              id: "image-" + tag,
+              ip: ip,
+              label: tag,
+              node_type: "image",
+              type: nodeTypeToShape("image"),
+              style: {
+                fill: "#FFF4AB",
+              },
+            };
+            return nowNode;
+          });
+          return Node;
         });
-        const nowEdges = res.data.repo_tags.map((tag) => {
-          const nowEdge = {
-            source: ip,
-            target: "image-" + tag,
-            type: "image",
-          };
-          return nowEdge;
+        const nowEdges = res.data.assets.flatMap((asset) => {
+          const Edge = asset.repo_tags.map((tag) => {
+            const nowEdge = {
+              source: ip,
+              target: "image-" + tag,
+              type: "image",
+            };
+            return nowEdge;
+          });
+          return Edge;
         });
         graphData.nodes.push(...nowNodes);
         graphData.edges.push(...nowEdges);
+        isGetResult[1] = true;
       })
-      .catch(() => {
+      .catch((error) => {
+        console.log(error);
         overviewGraphLoading.value = false;
       });
     promiseArr.push(imagePromise);
@@ -276,7 +292,7 @@ function updateDetailGraph(type, start, end, ip) {
             node_type: "network",
             type: nodeTypeToShape("network"),
             style: {
-              fill: "#87AFFF",
+              fill: "#78E86F",
             },
           };
           return nowNode;
@@ -291,13 +307,20 @@ function updateDetailGraph(type, start, end, ip) {
         });
         graphData.nodes.push(...nowNodes);
         graphData.edges.push(...nowEdges);
+        isGetResult[2] = true;
       })
-      .catch(() => {
+      .catch((error) => {
+        console.log(error);
         overviewGraphLoading.value = false;
       });
     promiseArr.push(networkPromise);
-    Promise.all(promiseArr).then(() => {
+    //必须等待全部操作完成才能产生图
+    Promise.allSettled(promiseArr).then(() => {
       nextTick(() => {
+        if (!isGetResult[0] || !isGetResult[1] || !isGetResult[2]) {
+          graphData.nodes = [];
+          graphData.edges = [];
+        }
         if (!detailGraph) {
           detailGraph = createDetailGragh("detail-graph");
         }
@@ -305,7 +328,7 @@ function updateDetailGraph(type, start, end, ip) {
         detailGraph.render();
         overviewGraphLoading.value = false;
       });
-    });
+    }).catch((error) => console.log(error));
   }
   else {
     overviewGraphLoading.value = false;
