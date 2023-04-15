@@ -4,7 +4,7 @@ import axios from "axios";
 import axiosRetry from "axios-retry";
 import svgPanZoom from "svg-pan-zoom";
 
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, toRaw, watch } from "vue";
 import { ElMessage } from "element-plus";
 
 //设置全局重试次数，避免异步操作失败，导致容器信息图不完整
@@ -345,7 +345,7 @@ const overviewGraphTimeRangeShortcuts = [
     value: () => {
       const end = new Date();
       const start = new Date();
-      start.setTime(start.getTime() - 3600 * 1000 * 1);
+      start.setTime(start.getTime() - 3600 * 1000);
       return [start, end];
     },
   },
@@ -549,10 +549,8 @@ function createOverviewGragh(containerId) {
 }
 
 onMounted(() => {
-  // last day
-  const end = new Date();
-  const start = new Date();
-  start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+  const start = new Date("2023-04-04 00:00:00");
+  const end = new Date("2023-04-05 00:00:00");
   overviewGraphTimeRange.value = [start, end];
   overviewGraphIp.value = "10.0.0.193";
   updateOverviewGraph(
@@ -587,6 +585,12 @@ watch(detailGraphSelected, (cur) => {
 
 let detailGraph = null;
 let detailGraphContainer = null;
+
+const detailGraphHighlightedNode = ref(null);
+const isDetailGraphSelected = computed(() => {
+  return detailGraphHighlightedNode.value !== null;
+});
+
 const detailGraphColSpan = computed(() => {
   return 24 - overviewGraphColSpan.value;
 });
@@ -656,6 +660,29 @@ function createDetailGragh(containerId) {
     ],
   });
 
+  // 高亮
+  graph.on("node:click", (evt) => {
+    const { item } = evt;
+
+    if (detailGraphHighlightedNode.value) {
+      if (toRaw(detailGraphHighlightedNode.value) === item) {
+        // 点击已高亮的节点时取消变暗效果
+        graph.getNodes().forEach((node) => {
+          graph.setItemState(node, "dim", false);
+        });
+        detailGraphHighlightedNode.value = null;
+      }
+    } else {
+      // 首次点击节点时使其他节点变暗
+      graph.getNodes().forEach((node) => {
+        if (node !== item) {
+          graph.setItemState(node, "dim", true);
+        }
+      });
+      detailGraphHighlightedNode.value = item;
+    }
+  });
+
   // 重新布局
   function refreshDragedNodePosition(e) {
     const model = e.item.get("model");
@@ -693,15 +720,24 @@ function openAuditGraphDialog() {
   auditGraphIp.value =
     overviewGraphHighlightedNode.getModel().ip ??
     overviewGraphHighlightedNode.getModel().id;
-  const end = new Date();
+
+  const alertTime = detailGraphHighlightedNode.value
+    .getModel()
+    .hasOwnProperty("time")
+    ? new Date(detailGraphHighlightedNode.value.getModel().time)
+    : new Date();
   const start = new Date();
-  start.setTime(start.getTime() - 300 * 1000 * 24 * 7);
+  start.setTime(alertTime.getTime() - 300 * 1000);
+  const end = new Date();
+  end.setTime(alertTime.getTime() + 300 * 1000);
   auditGraphTimeRange.value = [start, end];
 
   searchAuditGraph();
 }
 function closeAuditGraphDialog() {
   showAuditGraphDialog.value = false;
+  // reset
+  detailGraphHighlightedNode.value = null;
 }
 
 const auditGraphIp = ref("");
@@ -712,7 +748,7 @@ const auditGraphTimeRangeShortcuts = [
     value: () => {
       const end = new Date();
       const start = new Date();
-      start.setTime(start.getTime() - 300 * 1000 * 6);
+      start.setTime(start.getTime() - 300 * 1000);
       return [start, end];
     },
   },
@@ -721,7 +757,7 @@ const auditGraphTimeRangeShortcuts = [
     value: () => {
       const end = new Date();
       const start = new Date();
-      start.setTime(start.getTime() - 900 * 1000 * 24);
+      start.setTime(start.getTime() - 900 * 1000);
       return [start, end];
     },
   },
@@ -730,7 +766,7 @@ const auditGraphTimeRangeShortcuts = [
     value: () => {
       const end = new Date();
       const start = new Date();
-      start.setTime(start.getTime() - 1800 * 1000 * 24 * 7);
+      start.setTime(start.getTime() - 1800 * 1000);
       return [start, end];
     },
   },
@@ -739,7 +775,7 @@ const auditGraphTimeRangeShortcuts = [
     value: () => {
       const end = new Date();
       const start = new Date();
-      start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+      start.setTime(start.getTime() - 3600 * 1000);
       return [start, end];
     },
   },
@@ -845,8 +881,16 @@ function createNewEmbed(src) {
                         :value="option.value"
                       />
                     </el-select>
-                    <el-tooltip content="审计溯源图" placement="right">
-                      <el-button @click="openAuditGraphDialog" size="large">
+                    <el-tooltip
+                      v-if="detailGraphSelected === 'alert'"
+                      content="审计溯源图"
+                      placement="right"
+                    >
+                      <el-button
+                        @click="openAuditGraphDialog"
+                        :disabled="!isDetailGraphSelected"
+                        size="large"
+                      >
                         <el-icon>
                           <FullScreen />
                         </el-icon>
