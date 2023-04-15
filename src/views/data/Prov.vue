@@ -45,6 +45,11 @@ function getTooltip(model) {
                   <p>id: ${model.id}</p>
                 </div>`;
       }
+    } else if (model.node_type === "docker") {
+      //容器信息，为docker设置鼠标悬浮内容
+      return `<div>
+                <p>id: ${model.id}</p>
+              </div>`;
     } else if (model.node_type === "app") {
       return `<div>
                 <p>id: ${model.id}</p>
@@ -170,7 +175,139 @@ function updateDetailGraph(type, start, end, ip) {
       .catch(() => {
         overviewGraphLoading.value = false;
       });
-  } else {
+  } else if (type === "docker") {
+    // 获取容器信息，产生图
+    const graphData = {
+      nodes: [],
+      edges: [],
+    };
+    const originNode = {
+      id: ip,
+      ip: ip,
+      label: ip,
+      node_type: "docker",
+      type: nodeTypeToShape("host"),
+      style: {
+        fill: "#87F7FF",
+      },
+    }
+    graphData.nodes.push(originNode);
+    // 设置同步
+    const promiseArr = [];
+    // 获取container
+    const containerPromise = axios
+      .post("http://10.0.0.236:8000/api/assets/docker/container", {
+        host_id: ip,
+      })
+      .then((res) => {
+        const nowNodes = res.data.assets.map((assert) => {
+          const nowNode = {
+            id: "container-" + assert.id,
+            ip: ip,
+            label: assert.name,
+            node_type: "container",
+            type: nodeTypeToShape("container"),
+            style: {
+              fill: "#48B5D4",
+            },
+          };
+          return nowNode;
+        });
+        const nowEdges = res.data.assets.map((assert) => {
+          const nowEdge = {
+            source: ip,
+            target: "container-" + assert.id,
+            type: "container",
+          };
+          return nowEdge;
+        });
+        graphData.nodes.push(...nowNodes);
+        graphData.edges.push(...nowEdges);
+      })
+      .catch(() => {
+        overviewGraphLoading.value = false;
+      });
+    promiseArr.push(containerPromise);
+    // 获取image
+    const imagePromise = axios
+      .post("http://10.0.0.236:8000/api/assets/docker/image", {
+        host_id: ip,
+      })
+      .then((res) => {
+        const nowNodes = res.data.repo_tags.map((tag) => {
+          const nowNode = {
+            id: "image-" + tag,
+            ip: ip,
+            label: tag,
+            node_type: "image",
+            type: nodeTypeToShape("image"),
+            style: {
+              fill: "#5BB6EB",
+            },
+          };
+          return nowNode;
+        });
+        const nowEdges = res.data.repo_tags.map((tag) => {
+          const nowEdge = {
+            source: ip,
+            target: "image-" + tag,
+            type: "image",
+          };
+          return nowEdge;
+        });
+        graphData.nodes.push(...nowNodes);
+        graphData.edges.push(...nowEdges);
+      })
+      .catch(() => {
+        overviewGraphLoading.value = false;
+      });
+    promiseArr.push(imagePromise);
+    // 获取network
+    const networkPromise = axios
+      .post("http://10.0.0.236:8000/api/assets/docker/network", {
+        host_id: ip,
+      })
+      .then((res) => {
+        const nowNodes = res.data.assets.map((assert) => {
+          const nowNode = {
+            id: "network-" + assert.id,
+            ip: ip,
+            label: assert.name,
+            node_type: "network",
+            type: nodeTypeToShape("network"),
+            style: {
+              fill: "#87AFFF",
+            },
+          };
+          return nowNode;
+        });
+        const nowEdges = res.data.assets.map((assert) => {
+          const nowEdge = {
+            source: ip,
+            target: "network-" + assert.id,
+            type: "network",
+          };
+          return nowEdge;
+        });
+        graphData.nodes.push(...nowNodes);
+        graphData.edges.push(...nowEdges);
+      })
+      .catch(() => {
+        overviewGraphLoading.value = false;
+      });
+    promiseArr.push(networkPromise);
+    Promise.all(promiseArr).then(() => {
+      nextTick(() => {
+        if (!detailGraph) {
+          detailGraph = createDetailGragh("detail-graph");
+        }
+        detailGraph.data(graphData);
+        detailGraph.render();
+        overviewGraphLoading.value = false;
+      });
+    });
+  }
+  else {
     overviewGraphLoading.value = false;
   }
 }
@@ -418,7 +555,7 @@ watch(detailGraphSelected, (cur) => {
         overviewGraphTimeRange.value[0],
         overviewGraphTimeRange.value[1],
         overviewGraphHighlightedNode.getModel().ip ??
-          overviewGraphHighlightedNode.getModel().id
+        overviewGraphHighlightedNode.getModel().id
       );
     });
   }
@@ -434,11 +571,12 @@ watch(detailGraphColSpan, (val) => {
     nextTick(() => {
       // 默认展示告警图
       updateDetailGraph(
-        "alert",
+        // 如果选中其他图，则按照选项内容展示
+        detailGraphSelected.value,
         overviewGraphTimeRange.value[0],
         overviewGraphTimeRange.value[1],
         overviewGraphHighlightedNode.getModel().ip ??
-          overviewGraphHighlightedNode.getModel().id
+        overviewGraphHighlightedNode.getModel().id
       );
     });
   }
@@ -631,24 +769,17 @@ function createNewEmbed(src) {
     <el-header>
       <el-row>
         <el-col :span="16">
-          <el-input
-            v-model="overviewGraphIp"
-            placeholder="请输入 ip，多个 ip 请用 , 分隔（可以为空）"
-            clearable
-          >
+          <el-input v-model="overviewGraphIp" placeholder="请输入 ip，多个 ip 请用 , 分隔（可以为空）" clearable>
             <template #prepend>
-              <el-date-picker
-                v-model="overviewGraphTimeRange"
-                type="datetimerange"
-                :shortcuts="overviewGraphTimeRangeShortcuts"
-                range-separator="-"
-                start-placeholder="开始时间"
-                end-placeholder="结束时间"
-              />
+              <el-date-picker v-model="overviewGraphTimeRange" type="datetimerange"
+                :shortcuts="overviewGraphTimeRangeShortcuts" range-separator="-" start-placeholder="开始时间"
+                end-placeholder="结束时间" />
             </template>
             <template #append>
               <el-button>
-                <el-icon @click="searchOverviewGraph"><Search /></el-icon>
+                <el-icon @click="searchOverviewGraph">
+                  <Search />
+                </el-icon>
               </el-button>
             </template>
           </el-input>
@@ -661,60 +792,44 @@ function createNewEmbed(src) {
           <div id="overview-graph" style="width: 100%; height: 100%" />
         </el-col>
         <el-col :span="detailGraphColSpan">
-          <el-card
-            style="height: 100%"
-            :body-style="{
-              height: '100%',
-              padding: 0,
-            }"
-          >
+          <el-card style="height: 100%" :body-style="{
+            height: '100%',
+            padding: 0,
+          }">
             <template #header>
               <div class="card-header">
                 <div>
                   <el-select v-model="detailGraphSelected" size="large">
-                    <el-option
-                      v-for="option in detailGraphOptions"
-                      :key="option.value"
-                      :label="option.label"
-                      :value="option.value"
-                    />
+                    <el-option v-for="option in detailGraphOptions" :key="option.value" :label="option.label"
+                      :value="option.value" />
                   </el-select>
                   <el-tooltip content="审计溯源图" placement="right">
                     <el-button @click="openAuditGraphDialog" size="large">
-                      <el-icon><FullScreen /></el-icon>
+                      <el-icon>
+                        <FullScreen />
+                      </el-icon>
                     </el-button>
                   </el-tooltip>
                 </div>
                 <el-button @click="closeDetailGraph" size="large">
-                  <el-icon color="#F56C6C"><CloseBold /></el-icon>
+                  <el-icon color="#F56C6C">
+                    <CloseBold />
+                  </el-icon>
                 </el-button>
               </div>
             </template>
             <div id="detail-graph" style="width: 100%; height: 100%" />
           </el-card>
         </el-col>
-        <el-dialog
-          v-model="showAuditGraphDialog"
-          :before-close="closeAuditGraphDialog"
-          title="审计溯源图"
-          fullscreen
-        >
-          <el-date-picker
-            v-model="auditGraphTimeRange"
-            type="datetimerange"
-            :shortcuts="auditGraphTimeRangeShortcuts"
-            range-separator="-"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
-          />
+        <el-dialog v-model="showAuditGraphDialog" :before-close="closeAuditGraphDialog" title="审计溯源图" fullscreen>
+          <el-date-picker v-model="auditGraphTimeRange" type="datetimerange" :shortcuts="auditGraphTimeRangeShortcuts"
+            range-separator="-" start-placeholder="开始时间" end-placeholder="结束时间" />
           <el-button @click="searchAuditGraph" style="vertical-align: top">
-            <el-icon><Search /></el-icon>
+            <el-icon>
+              <Search />
+            </el-icon>
           </el-button>
-          <div
-            v-loading.lock="auditGraphLoading"
-            id="audit-graph"
-            style="width: 100%; height: 100%"
-          />
+          <div v-loading.lock="auditGraphLoading" id="audit-graph" style="width: 100%; height: 100%" />
         </el-dialog>
       </el-row>
     </el-main>
