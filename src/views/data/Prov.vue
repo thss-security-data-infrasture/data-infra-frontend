@@ -179,7 +179,67 @@ function updateDetailGraph(type, start, end, ip) {
       .catch(() => {
         overviewGraphLoading.value = false;
       });
-  } else if (type === "docker") {
+  } else if (type === "app") {
+    // 获取app信息，产生关系图
+    const graphData = {
+      nodes: [],
+      edges: [],
+    }; 
+    const originNode = {
+      id: ip,
+      ip: ip,
+      label: ip,
+      node_type: "app",
+      type: nodeTypeToShape("host"),
+      style: {
+        fill: "#87F7FF",
+      },
+    }
+    graphData.nodes.push(originNode);
+    axios
+      .post("http://10.0.0.236:8000/api/assets/app", {
+        host_id: ip,
+      })
+      .then((res) => {
+        const nowNodes = res.data.assets.flatMap((asset) => {
+          const nowNode = {
+            id: "app-" + asset.app,
+            ip: ip,
+            label: asset.app,
+            node_type: "app",
+            type: nodeTypeToShape("app"),
+            style: {
+              fill: "#FFF4AB",
+            },
+          };
+          return nowNode;
+        });
+        const nowEdges = res.data.assets.flatMap((asset) => {
+          const nowEdge = {
+            source: ip,
+            target: "app-" + asset.app,
+            type: "app",
+          };
+          return nowEdge;
+        });
+        graphData.nodes.push(...nowNodes);
+        graphData.edges.push(...nowEdges);
+        nextTick(() => {
+          if (!detailGraph) {
+            detailGraph = createDetailGragh("detail-graph");
+          }
+          detailGraph.data(graphData);
+          detailGraph.render();
+          overviewGraphLoading.value = false;
+        });
+        
+      })
+      .catch((error) => {
+        console.log(error);
+        overviewGraphLoading.value = false;
+      });
+  }
+  else if (type === "docker") {
     // 获取容器信息，产生图
     const graphData = {
       nodes: [],
