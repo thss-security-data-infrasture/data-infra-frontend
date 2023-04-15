@@ -184,7 +184,7 @@ function updateDetailGraph(type, start, end, ip) {
     const graphData = {
       nodes: [],
       edges: [],
-    }; 
+    };
     const originNode = {
       id: ip,
       ip: ip,
@@ -194,7 +194,7 @@ function updateDetailGraph(type, start, end, ip) {
       style: {
         fill: "#87F7FF",
       },
-    }
+    };
     graphData.nodes.push(originNode);
     axios
       .post("http://10.0.0.236:8000/api/assets/app", {
@@ -232,14 +232,12 @@ function updateDetailGraph(type, start, end, ip) {
           detailGraph.render();
           overviewGraphLoading.value = false;
         });
-        
       })
       .catch((error) => {
         console.log(error);
         overviewGraphLoading.value = false;
       });
-  }
-  else if (type === "docker") {
+  } else if (type === "docker") {
     // 获取容器信息，产生图
     const graphData = {
       nodes: [],
@@ -258,9 +256,9 @@ function updateDetailGraph(type, start, end, ip) {
     graphData.nodes.push(originNode);
     // 设置同步
     const promiseArr = [];
-    //是否获取结果
+    // 是否获取结果
     let isGetResult = [false, false, false];
-    //获取container
+    // 获取container
     const containerPromise = axios
       .post("http://10.0.0.236:8000/api/assets/docker/container", {
         host_id: ip,
@@ -374,7 +372,7 @@ function updateDetailGraph(type, start, end, ip) {
         overviewGraphLoading.value = false;
       });
     promiseArr.push(networkPromise);
-    //必须等待全部操作完成才能产生图
+    // 必须等待全部操作完成才能产生图
     Promise.allSettled(promiseArr)
       .then(() => {
         nextTick(() => {
