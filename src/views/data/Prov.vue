@@ -789,118 +789,121 @@ function createNewEmbed(src) {
 </script>
 
 <template>
-  <el-container v-loading.lock="overviewGraphLoading" style="height: 100%">
-    <el-header>
-      <el-row>
-        <el-col :span="16">
-          <el-input
-            v-model="overviewGraphIp"
-            placeholder="请输入 ip，多个 ip 请用 , 分隔（可以为空）"
-            clearable
-          >
-            <template #prepend>
-              <el-date-picker
-                v-model="overviewGraphTimeRange"
-                type="datetimerange"
-                :shortcuts="overviewGraphTimeRangeShortcuts"
-                range-separator="-"
-                start-placeholder="开始时间"
-                end-placeholder="结束时间"
-              />
-            </template>
-            <template #append>
-              <el-button>
-                <el-icon @click="searchOverviewGraph">
-                  <Search />
-                </el-icon>
-              </el-button>
-            </template>
-          </el-input>
-        </el-col>
-      </el-row>
-    </el-header>
-    <el-main style="height: 100%; overflow-y: hidden">
-      <el-row style="height: 100%">
-        <el-col :span="overviewGraphColSpan">
-          <div id="overview-graph" style="width: 100%; height: 100%" />
-        </el-col>
-        <el-col :span="detailGraphColSpan">
-          <el-card
-            style="height: 100%"
-            :body-style="{
-              height: '100%',
-              padding: 0,
-            }"
-          >
-            <template #header>
-              <div class="card-header">
-                <div>
-                  <el-select v-model="detailGraphSelected" size="large">
-                    <el-option
-                      v-for="option in detailGraphOptions"
-                      :key="option.value"
-                      :label="option.label"
-                      :value="option.value"
-                    />
-                  </el-select>
-                  <el-tooltip content="审计溯源图" placement="right">
-                    <el-button @click="openAuditGraphDialog" size="large">
-                      <el-icon>
-                        <FullScreen />
-                      </el-icon>
-                    </el-button>
-                  </el-tooltip>
-                </div>
-                <el-button @click="closeDetailGraph" size="large">
-                  <el-icon color="#F56C6C">
-                    <CloseBold />
+  <!--avoid css pollution-->
+  <div id="prov-graph" style="height: 100%">
+    <el-container v-loading.lock="overviewGraphLoading" style="height: 100%">
+      <el-header>
+        <el-row>
+          <el-col :span="16">
+            <el-input
+              v-model="overviewGraphIp"
+              placeholder="请输入 ip，多个 ip 请用 , 分隔（可以为空）"
+              clearable
+            >
+              <template #prepend>
+                <el-date-picker
+                  v-model="overviewGraphTimeRange"
+                  type="datetimerange"
+                  :shortcuts="overviewGraphTimeRangeShortcuts"
+                  range-separator="-"
+                  start-placeholder="开始时间"
+                  end-placeholder="结束时间"
+                />
+              </template>
+              <template #append>
+                <el-button>
+                  <el-icon @click="searchOverviewGraph">
+                    <Search />
                   </el-icon>
                 </el-button>
-              </div>
-            </template>
-            <div id="detail-graph" style="width: 100%; height: 100%" />
-          </el-card>
-        </el-col>
-        <el-dialog
-          v-model="showAuditGraphDialog"
-          :before-close="closeAuditGraphDialog"
-          title="审计溯源图"
-          fullscreen
-        >
-          <el-date-picker
-            v-model="auditGraphTimeRange"
-            type="datetimerange"
-            :shortcuts="auditGraphTimeRangeShortcuts"
-            range-separator="-"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
-          />
-          <el-button @click="searchAuditGraph" style="vertical-align: top">
-            <el-icon>
-              <Search />
-            </el-icon>
-          </el-button>
-          <div
-            v-loading.lock="auditGraphLoading"
-            id="audit-graph"
-            style="width: 100%; height: 100%"
-          />
-        </el-dialog>
-      </el-row>
-    </el-main>
-  </el-container>
+              </template>
+            </el-input>
+          </el-col>
+        </el-row>
+      </el-header>
+      <el-main style="height: 100%; overflow-y: hidden">
+        <el-row style="height: 100%">
+          <el-col :span="overviewGraphColSpan">
+            <div id="overview-graph" style="width: 100%; height: 100%" />
+          </el-col>
+          <el-col :span="detailGraphColSpan">
+            <el-card
+              style="height: 100%"
+              :body-style="{
+                height: '100%',
+                padding: 0,
+              }"
+            >
+              <template #header>
+                <div class="card-header">
+                  <div>
+                    <el-select v-model="detailGraphSelected" size="large">
+                      <el-option
+                        v-for="option in detailGraphOptions"
+                        :key="option.value"
+                        :label="option.label"
+                        :value="option.value"
+                      />
+                    </el-select>
+                    <el-tooltip content="审计溯源图" placement="right">
+                      <el-button @click="openAuditGraphDialog" size="large">
+                        <el-icon>
+                          <FullScreen />
+                        </el-icon>
+                      </el-button>
+                    </el-tooltip>
+                  </div>
+                  <el-button @click="closeDetailGraph" size="large">
+                    <el-icon color="#F56C6C">
+                      <CloseBold />
+                    </el-icon>
+                  </el-button>
+                </div>
+              </template>
+              <div id="detail-graph" style="width: 100%; height: 100%" />
+            </el-card>
+          </el-col>
+          <el-dialog
+            v-model="showAuditGraphDialog"
+            :before-close="closeAuditGraphDialog"
+            title="审计溯源图"
+            fullscreen
+          >
+            <el-date-picker
+              v-model="auditGraphTimeRange"
+              type="datetimerange"
+              :shortcuts="auditGraphTimeRangeShortcuts"
+              range-separator="-"
+              start-placeholder="开始时间"
+              end-placeholder="结束时间"
+            />
+            <el-button @click="searchAuditGraph" style="vertical-align: top">
+              <el-icon>
+                <Search />
+              </el-icon>
+            </el-button>
+            <div
+              v-loading.lock="auditGraphLoading"
+              id="audit-graph"
+              style="width: 100%; height: 100%"
+            />
+          </el-dialog>
+        </el-row>
+      </el-main>
+    </el-container>
+  </div>
 </template>
 
 <style>
-.el-input-group__prepend {
+#prov-graph .el-input-group__prepend {
   padding: 0;
 }
 
-.el-dialog__body {
+#prov-graph .el-dialog__body {
   height: 80%;
 }
 
-.card-header {
+#prov-graph .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
