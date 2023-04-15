@@ -194,7 +194,7 @@ function updateDetailGraph(type, start, end, ip) {
       style: {
         fill: "#87F7FF",
       },
-    }
+    };
     graphData.nodes.push(originNode);
     // 设置同步
     const promiseArr = [];
@@ -315,22 +315,23 @@ function updateDetailGraph(type, start, end, ip) {
       });
     promiseArr.push(networkPromise);
     //必须等待全部操作完成才能产生图
-    Promise.allSettled(promiseArr).then(() => {
-      nextTick(() => {
-        if (!isGetResult[0] || !isGetResult[1] || !isGetResult[2]) {
-          graphData.nodes = [];
-          graphData.edges = [];
-        }
-        if (!detailGraph) {
-          detailGraph = createDetailGragh("detail-graph");
-        }
-        detailGraph.data(graphData);
-        detailGraph.render();
-        overviewGraphLoading.value = false;
-      });
-    }).catch((error) => console.log(error));
-  }
-  else {
+    Promise.allSettled(promiseArr)
+      .then(() => {
+        nextTick(() => {
+          if (!isGetResult[0] || !isGetResult[1] || !isGetResult[2]) {
+            graphData.nodes = [];
+            graphData.edges = [];
+          }
+          if (!detailGraph) {
+            detailGraph = createDetailGragh("detail-graph");
+          }
+          detailGraph.data(graphData);
+          detailGraph.render();
+          overviewGraphLoading.value = false;
+        });
+      })
+      .catch((error) => console.log(error));
+  } else {
     overviewGraphLoading.value = false;
   }
 }
@@ -578,7 +579,7 @@ watch(detailGraphSelected, (cur) => {
         overviewGraphTimeRange.value[0],
         overviewGraphTimeRange.value[1],
         overviewGraphHighlightedNode.getModel().ip ??
-        overviewGraphHighlightedNode.getModel().id
+          overviewGraphHighlightedNode.getModel().id
       );
     });
   }
@@ -599,7 +600,7 @@ watch(detailGraphColSpan, (val) => {
         overviewGraphTimeRange.value[0],
         overviewGraphTimeRange.value[1],
         overviewGraphHighlightedNode.getModel().ip ??
-        overviewGraphHighlightedNode.getModel().id
+          overviewGraphHighlightedNode.getModel().id
       );
     });
   }
@@ -792,11 +793,20 @@ function createNewEmbed(src) {
     <el-header>
       <el-row>
         <el-col :span="16">
-          <el-input v-model="overviewGraphIp" placeholder="请输入 ip，多个 ip 请用 , 分隔（可以为空）" clearable>
+          <el-input
+            v-model="overviewGraphIp"
+            placeholder="请输入 ip，多个 ip 请用 , 分隔（可以为空）"
+            clearable
+          >
             <template #prepend>
-              <el-date-picker v-model="overviewGraphTimeRange" type="datetimerange"
-                :shortcuts="overviewGraphTimeRangeShortcuts" range-separator="-" start-placeholder="开始时间"
-                end-placeholder="结束时间" />
+              <el-date-picker
+                v-model="overviewGraphTimeRange"
+                type="datetimerange"
+                :shortcuts="overviewGraphTimeRangeShortcuts"
+                range-separator="-"
+                start-placeholder="开始时间"
+                end-placeholder="结束时间"
+              />
             </template>
             <template #append>
               <el-button>
@@ -815,16 +825,23 @@ function createNewEmbed(src) {
           <div id="overview-graph" style="width: 100%; height: 100%" />
         </el-col>
         <el-col :span="detailGraphColSpan">
-          <el-card style="height: 100%" :body-style="{
-            height: '100%',
-            padding: 0,
-          }">
+          <el-card
+            style="height: 100%"
+            :body-style="{
+              height: '100%',
+              padding: 0,
+            }"
+          >
             <template #header>
               <div class="card-header">
                 <div>
                   <el-select v-model="detailGraphSelected" size="large">
-                    <el-option v-for="option in detailGraphOptions" :key="option.value" :label="option.label"
-                      :value="option.value" />
+                    <el-option
+                      v-for="option in detailGraphOptions"
+                      :key="option.value"
+                      :label="option.label"
+                      :value="option.value"
+                    />
                   </el-select>
                   <el-tooltip content="审计溯源图" placement="right">
                     <el-button @click="openAuditGraphDialog" size="large">
@@ -844,15 +861,30 @@ function createNewEmbed(src) {
             <div id="detail-graph" style="width: 100%; height: 100%" />
           </el-card>
         </el-col>
-        <el-dialog v-model="showAuditGraphDialog" :before-close="closeAuditGraphDialog" title="审计溯源图" fullscreen>
-          <el-date-picker v-model="auditGraphTimeRange" type="datetimerange" :shortcuts="auditGraphTimeRangeShortcuts"
-            range-separator="-" start-placeholder="开始时间" end-placeholder="结束时间" />
+        <el-dialog
+          v-model="showAuditGraphDialog"
+          :before-close="closeAuditGraphDialog"
+          title="审计溯源图"
+          fullscreen
+        >
+          <el-date-picker
+            v-model="auditGraphTimeRange"
+            type="datetimerange"
+            :shortcuts="auditGraphTimeRangeShortcuts"
+            range-separator="-"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+          />
           <el-button @click="searchAuditGraph" style="vertical-align: top">
             <el-icon>
               <Search />
             </el-icon>
           </el-button>
-          <div v-loading.lock="auditGraphLoading" id="audit-graph" style="width: 100%; height: 100%" />
+          <div
+            v-loading.lock="auditGraphLoading"
+            id="audit-graph"
+            style="width: 100%; height: 100%"
+          />
         </el-dialog>
       </el-row>
     </el-main>
