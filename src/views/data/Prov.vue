@@ -118,10 +118,10 @@ function updateOverviewGraph(start, end, ip) {
         overviewGraph.data(graphData);
         overviewGraph.render();
         // FIXME: 暂时不知道这个 render 是怎么回事，似乎数量太多时渲染布局会出问题
-        // 每一条边等 5ms，从观察来看，500 条边延迟 2500ms 比较合适
+        // 每一条边等 10ms
         setTimeout(() => {
           overviewGraphLoading.value = false;
-        }, graphData.edges.length * 5);
+        }, graphData.edges.length * 10);
       });
     })
     .catch(() => {
@@ -720,20 +720,18 @@ function createDetailGragh(containerId) {
   graph.on("node:click", (evt) => {
     const { item } = evt;
 
-    if (detailGraphHighlightedNode.value) {
-      if (toRaw(detailGraphHighlightedNode.value) === item) {
-        // 点击已高亮的节点时取消变暗效果
-        graph.getNodes().forEach((node) => {
-          graph.setItemState(node, "dim", false);
-        });
-        detailGraphHighlightedNode.value = null;
-      }
+    // if (detailGraphHighlightedNode.value) {
+    if (toRaw(detailGraphHighlightedNode.value) === item) {
+      // 点击已高亮的节点时取消变暗效果
+      graph.getNodes().forEach((node) => {
+        graph.setItemState(node, "dim", false);
+      });
+      detailGraphHighlightedNode.value = null;
+      // }
     } else {
       // 首次点击节点时使其他节点变暗
       graph.getNodes().forEach((node) => {
-        if (node !== item) {
-          graph.setItemState(node, "dim", true);
-        }
+        graph.setItemState(node, "dim", node !== item);
       });
       detailGraphHighlightedNode.value = item;
     }
