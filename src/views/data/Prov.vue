@@ -493,6 +493,8 @@ function closeDetailGraph() {
   });
   overviewGraphHighlightedNode = null;
   overviewGraphColSpan.value = 24;
+  // 清空高亮选择
+  detailGraphHighlightedNode.value = null;
 }
 
 function createOverviewGragh(containerId) {
@@ -794,8 +796,6 @@ function openAuditGraphDialog() {
 }
 function closeAuditGraphDialog() {
   showAuditGraphDialog.value = false;
-  // reset
-  detailGraphHighlightedNode.value = null;
 }
 
 const auditGraphIp = ref("");
