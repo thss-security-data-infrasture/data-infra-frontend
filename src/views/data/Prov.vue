@@ -1,14 +1,10 @@
 <script setup>
 import G6 from "@antv/g6";
 import axios from "axios";
-import axiosRetry from "axios-retry";
 import svgPanZoom from "svg-pan-zoom";
 
 import { computed, nextTick, onMounted, ref, toRaw, watch } from "vue";
 import { ElMessage } from "element-plus";
-
-//设置全局重试次数，避免异步操作失败，导致容器信息图不完整
-axiosRetry(axios, { retries: 3 });
 
 // tools
 const overviewGraphLoading = ref(false);
