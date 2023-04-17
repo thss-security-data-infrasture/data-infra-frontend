@@ -981,7 +981,7 @@ function createNewEmbed(src) {
             <div
               v-loading.lock="auditGraphLoading"
               id="audit-graph"
-              style="width: 100%; height: 100%"
+              style="width: 100%; height: 100%; overflow-y: hidden"
             />
           </el-dialog>
         </el-row>
