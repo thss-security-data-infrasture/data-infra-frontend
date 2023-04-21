@@ -185,7 +185,7 @@ function alertLogQuery(page) {
       <el-main style="height: 100%">
         <el-row>
           <el-col
-            :span="12"
+            :span="11"
             v-loading.lock="trafficDataLoading"
             style="display: flex; flex-direction: column"
           >
@@ -194,11 +194,6 @@ function alertLogQuery(page) {
               <el-table-column
                 prop="clientIp"
                 label="客户端 IP"
-                min-width="100px"
-              />
-              <el-table-column
-                prop="clientPort"
-                label="客户端端口"
                 min-width="100px"
               />
               <el-table-column
@@ -242,7 +237,7 @@ function alertLogQuery(page) {
           </el-col>
           <el-col
             :span="11"
-            :offset="1"
+            :offset="2"
             v-loading.lock="alertDataLoading"
             style="display: flex; flex-direction: column"
           >
@@ -273,12 +268,12 @@ function alertLogQuery(page) {
           </el-col>
         </el-row>
         <el-row>
-          <el-col :span="12" style="display: flex; flex-direction: column">
+          <el-col :span="11" style="display: flex; flex-direction: column">
             <el-divider>应用信息</el-divider>
           </el-col>
           <el-col
             :span="11"
-            :offset="1"
+            :offset="2"
             style="display: flex; flex-direction: column"
           >
             <el-divider>审计信息</el-divider>
