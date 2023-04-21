@@ -248,11 +248,20 @@ function alertLogQuery(page) {
           >
             <el-divider>告警信息</el-divider>
             <el-table :data="alertData" height="500px">
+              <el-table-column type="expand">
+                <template #default="props">
+                  <!--原来叫详情链接，后面改成详情内容了-->
+                  <ul>
+                    <li v-for="(item, idx) in props.row.link" :key="idx">
+                      {{ item }}
+                    </li>
+                  </ul>
+                </template>
+              </el-table-column>
               <el-table-column prop="host" label="主机" />
               <el-table-column prop="alert" label="告警名称" />
               <el-table-column prop="time" label="时间" />
               <el-table-column prop="device" label="告警设备" />
-              <el-table-column prop="link" label="详情链接" />
             </el-table>
             <el-pagination
               :page-count="alertPageCount"
