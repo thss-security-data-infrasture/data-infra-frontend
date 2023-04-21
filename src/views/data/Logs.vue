@@ -1,44 +1,148 @@
-<script setup></script>
+<script setup>
+import axios from "axios";
+
+import { onMounted, ref } from "vue";
+
+const logQueryTimeRange = ref("");
+const logQueryTimeRangeShortcuts = [
+  {
+    text: "Last 1h",
+    value: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 3600 * 1000);
+      return [start, end];
+    },
+  },
+  {
+    text: "Last 6h",
+    value: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 3600 * 1000 * 6);
+      return [start, end];
+    },
+  },
+  {
+    text: "Last 12h",
+    value: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 3600 * 1000 * 12);
+      return [start, end];
+    },
+  },
+  {
+    text: "Last Day",
+    value: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 3600 * 1000 * 24);
+      return [start, end];
+    },
+  },
+  {
+    text: "Last Week",
+    value: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+      return [start, end];
+    },
+  },
+  {
+    text: "Last Month",
+    value: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+      return [start, end];
+    },
+  },
+];
+const logQueryTypes = ref(["traffic"]);
+const logQueryIp = ref("");
+function logQuery() {
+  if (logQueryTypes.value.includes("traffic")) {
+    trafficLogQuery(1);
+  }
+}
+
+onMounted(() => {
+  const start = new Date("2023-04-04 00:00:00");
+  const end = new Date("2023-04-05 00:00:00");
+  logQueryTimeRange.value = [start, end];
+  logQueryIp.value = "10.0.0.193";
+});
+
+const trafficDataLoading = ref(false);
+const trafficData = ref([]);
+const trafficPageCount = ref(0);
+const trafficCurrentPage = ref(1);
+function trafficLogQuery(page) {
+  trafficCurrentPage.value = page;
+  trafficDataLoading.value = true;
+  axios
+    .post("http://10.0.0.236:8000/api/fused_info/traffic", {
+      start: logQueryTimeRange.value[0].toISOString(),
+      end: logQueryTimeRange.value[1].toISOString(),
+      ipList: logQueryIp.value.split(","),
+      page: page,
+      size: 10, // 10 items per page
+      demo: false,
+    })
+    .then((res) => {
+      trafficData.value = res.data.data.map((item) => ({
+        ...item,
+        startTime: item.startTime.split(".")[0],
+        endTime: item.endTime.split(".")[0],
+      }));
+      trafficPageCount.value = res.data.total;
+      console.log(res.data);
+    })
+    .finally(() => {
+      trafficDataLoading.value = false;
+    });
+}
+</script>
 
 <template>
   <!--avoid css pollution-->
   <div id="log-fusion" style="height: 100%">
-    <el-container v-loading.lock="overviewGraphLoading" style="height: 100%">
+    <el-container style="height: 100%">
       <el-header>
         <el-row>
           <el-col :span="16" style="display: flex">
             <el-date-picker
-              v-model="overviewGraphTimeRange"
+              v-model="logQueryTimeRange"
               type="datetimerange"
-              :shortcuts="overviewGraphTimeRangeShortcuts"
+              :shortcuts="logQueryTimeRangeShortcuts"
               range-separator="-"
               start-placeholder="开始时间"
               end-placeholder="结束时间"
               style="min-width: 400px"
             />
             <el-select
-              v-model="value3"
+              v-model="logQueryTypes"
               multiple
               collapse-tags
               collapse-tags-tooltip
-              placeholder="Select"
-              style="min-width: 150px"
+              placeholder="请选择日志类型"
+              style="min-width: 180px"
             >
-              <el-option
-                v-for="item in options"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              />
+              <el-option label="流量日志" value="traffic" />
+              <el-option label="告警日志" value="alert" />
+              <el-option label="应用日志" value="app" />
+              <el-option label="审计日志" value="audit" />
             </el-select>
             <el-input
-              v-model="overviewGraphIp"
+              v-model="logQueryIp"
               placeholder="请输入 ip，多个 ip 请用 , 分隔（可以为空）"
               clearable
             >
               <template #append>
                 <el-button>
-                  <el-icon @click="searchOverviewGraph">
+                  <el-icon @click="logQuery">
                     <Search />
                   </el-icon>
                 </el-button>
@@ -48,47 +152,57 @@
           <el-col :span="8"> </el-col>
         </el-row>
       </el-header>
-      <el-main style="height: 100%; overflow-y: hidden">
+      <el-main style="height: 100%">
         <el-row>
           <el-col :span="12" style="display: flex; flex-direction: column">
             <el-divider>流量信息</el-divider>
-            <el-table :data="tableData" style="width: 100%">
+            <el-table :data="trafficData" v-loading.lock="trafficDataLoading">
               <el-table-column
-                prop="date"
+                prop="clientIp"
                 label="客户端 IP"
                 min-width="100px"
               />
               <el-table-column
-                prop="name"
+                prop="clientPort"
                 label="客户端端口"
                 min-width="100px"
               />
               <el-table-column
-                prop="date"
+                prop="serverIp"
                 label="服务端 IP"
                 min-width="100px"
               />
               <el-table-column
-                prop="name"
+                prop="serverPort"
                 label="服务端端口"
                 min-width="100px"
               />
-              <el-table-column prop="date" label="开始时间" min-width="100px" />
-              <el-table-column prop="name" label="结束时间" min-width="100px" />
               <el-table-column
-                prop="address"
+                prop="startTime"
+                label="开始时间"
+                min-width="200px"
+              />
+              <el-table-column
+                prop="endTime"
+                label="结束时间"
+                min-width="200px"
+              />
+              <el-table-column
+                prop="pkts"
                 label="总数据包数"
                 min-width="100px"
               />
               <el-table-column
-                prop="address"
+                prop="devices"
                 label="设备列表"
                 min-width="100px"
               />
             </el-table>
             <el-pagination
+              :page-count="trafficPageCount"
+              :current-page="trafficCurrentPage"
+              @current-change="trafficLogQuery"
               layout="prev, pager, next"
-              :total="50"
               style="margin: 0 auto"
             />
           </el-col>
@@ -98,7 +212,7 @@
             style="display: flex; flex-direction: column"
           >
             <el-divider>告警信息</el-divider>
-            <el-table :data="tableData">
+            <!-- <el-table :data="tableData">
               <el-table-column prop="date" label="主机" />
               <el-table-column prop="name" label="告警名称" />
               <el-table-column prop="date" label="时间" />
@@ -109,7 +223,7 @@
               layout="prev, pager, next"
               :total="50"
               style="margin: 0 auto"
-            />
+            /> -->
           </el-col>
         </el-row>
       </el-main>
