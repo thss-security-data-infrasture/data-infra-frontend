@@ -60,12 +60,17 @@ const logQueryTimeRangeShortcuts = [
     },
   },
 ];
-const logQueryTypes = ref(["traffic"]);
+const logQueryTypes = ref(["traffic", "alert"]);
 const logQueryIp = ref("");
-function logQuery() {
+async function logQuery() {
+  const promises = [];
   if (logQueryTypes.value.includes("traffic")) {
-    trafficLogQuery(1);
+    promises.push(trafficLogQuery(1));
   }
+  if (logQueryTypes.value.includes("alert")) {
+    promises.push(alertLogQuery(1));
+  }
+  await Promise.allSettled(promises);
 }
 
 onMounted(() => {
@@ -98,10 +103,35 @@ function trafficLogQuery(page) {
         endTime: item.endTime.split(".")[0],
       }));
       trafficPageCount.value = res.data.total;
-      console.log(res.data);
     })
     .finally(() => {
       trafficDataLoading.value = false;
+    });
+}
+
+const alertDataLoading = ref(false);
+const alertData = ref([]);
+const alertPageCount = ref(0);
+const alertCurrentPage = ref(1);
+function alertLogQuery(page) {
+  alertCurrentPage.value = page;
+  alertDataLoading.value = true;
+  axios
+    .post("http://10.0.0.236:8000/api/fused_info/alert", {
+      start: logQueryTimeRange.value[0].toISOString(),
+      end: logQueryTimeRange.value[1].toISOString(),
+      ipList: logQueryIp.value.split(","),
+      page: page,
+      size: 10, // 10 items per page
+      demo: true,
+    })
+    .then((res) => {
+      alertData.value = res.data.data;
+      alertPageCount.value = res.data.total;
+      console.log(res.data);
+    })
+    .finally(() => {
+      alertDataLoading.value = false;
     });
 }
 </script>
@@ -154,9 +184,13 @@ function trafficLogQuery(page) {
       </el-header>
       <el-main style="height: 100%">
         <el-row>
-          <el-col :span="12" style="display: flex; flex-direction: column">
+          <el-col
+            :span="12"
+            v-loading.lock="trafficDataLoading"
+            style="display: flex; flex-direction: column"
+          >
             <el-divider>流量信息</el-divider>
-            <el-table :data="trafficData" v-loading.lock="trafficDataLoading">
+            <el-table :data="trafficData" height="500px">
               <el-table-column
                 prop="clientIp"
                 label="客户端 IP"
@@ -209,21 +243,36 @@ function trafficLogQuery(page) {
           <el-col
             :span="11"
             :offset="1"
+            v-loading.lock="alertDataLoading"
             style="display: flex; flex-direction: column"
           >
             <el-divider>告警信息</el-divider>
-            <!-- <el-table :data="tableData">
-              <el-table-column prop="date" label="主机" />
-              <el-table-column prop="name" label="告警名称" />
-              <el-table-column prop="date" label="时间" />
-              <el-table-column prop="name" label="详情链接" />
-              <el-table-column prop="date" label="告警设备" />
+            <el-table :data="alertData" height="500px">
+              <el-table-column prop="host" label="主机" />
+              <el-table-column prop="alert" label="告警名称" />
+              <el-table-column prop="time" label="时间" />
+              <el-table-column prop="device" label="告警设备" />
+              <el-table-column prop="link" label="详情链接" />
             </el-table>
             <el-pagination
+              :page-count="alertPageCount"
+              :current-page="alertCurrentPage"
+              @current-change="alertLogQuery"
               layout="prev, pager, next"
-              :total="50"
               style="margin: 0 auto"
-            /> -->
+            />
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12" style="display: flex; flex-direction: column">
+            <el-divider>应用信息</el-divider>
+          </el-col>
+          <el-col
+            :span="11"
+            :offset="1"
+            style="display: flex; flex-direction: column"
+          >
+            <el-divider>审计信息</el-divider>
           </el-col>
         </el-row>
       </el-main>
