@@ -78,6 +78,8 @@ onMounted(() => {
   const end = new Date("2023-04-05 00:00:00");
   logQueryTimeRange.value = [start, end];
   logQueryIp.value = "10.0.0.193";
+  // query on page loaded
+  logQuery();
 });
 
 const trafficDataLoading = ref(false);
