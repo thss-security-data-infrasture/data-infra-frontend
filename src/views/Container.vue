@@ -19,11 +19,11 @@ const openedMenuItems = ref(["/data", "/info", "/knowledge"]);
               <el-icon>
                 <DataAnalysis />
               </el-icon>
-              <span>数据库</span>
+              <span>数据查询</span>
             </template>
-            <el-menu-item index="/data/fields">字段表</el-menu-item>
-            <el-menu-item index="/data/logs">融合日志</el-menu-item>
-            <el-menu-item index="/data/prov">溯源图</el-menu-item>
+            <el-menu-item index="/data/fields">字段表查询</el-menu-item>
+            <el-menu-item index="/data/logs">融合日志查询</el-menu-item>
+            <el-menu-item index="/data/prov">溯源图查询</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="/info">
             <template #title>
