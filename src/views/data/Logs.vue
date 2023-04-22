@@ -82,7 +82,7 @@ onMounted(() => {
 
 const trafficDataLoading = ref(false);
 const trafficData = ref([]);
-const trafficPageCount = ref(0);
+const trafficDataTotal = ref(0);
 const trafficCurrentPage = ref(1);
 function trafficLogQuery(page) {
   trafficCurrentPage.value = page;
@@ -99,10 +99,10 @@ function trafficLogQuery(page) {
     .then((res) => {
       trafficData.value = res.data.data.map((item) => ({
         ...item,
-        startTime: item.startTime.split(".")[0],
-        endTime: item.endTime.split(".")[0],
+        startTime: item.startTime.split(".")[0].replaceAll("T", " "),
+        endTime: item.endTime.split(".")[0].replaceAll("T", " "),
       }));
-      trafficPageCount.value = res.data.total;
+      trafficDataTotal.value = res.data.total;
     })
     .finally(() => {
       trafficDataLoading.value = false;
@@ -111,7 +111,7 @@ function trafficLogQuery(page) {
 
 const alertDataLoading = ref(false);
 const alertData = ref([]);
-const alertPageCount = ref(0);
+const alertDataTotal = ref(0);
 const alertCurrentPage = ref(1);
 function alertLogQuery(page) {
   alertCurrentPage.value = page;
@@ -123,12 +123,14 @@ function alertLogQuery(page) {
       ipList: logQueryIp.value.split(","),
       page: page,
       size: 10, // 10 items per page
-      demo: true,
+      demo: false,
     })
     .then((res) => {
-      alertData.value = res.data.data;
-      alertPageCount.value = res.data.total;
-      console.log(res.data);
+      alertData.value = res.data.data.map((item) => ({
+        ...item,
+        time: item.time.split(".")[0].replaceAll("T", " "),
+      }));
+      alertDataTotal.value = res.data.total;
     })
     .finally(() => {
       alertDataLoading.value = false;
@@ -190,7 +192,7 @@ function alertLogQuery(page) {
             style="display: flex; flex-direction: column"
           >
             <el-divider>流量信息</el-divider>
-            <el-table :data="trafficData" height="500px">
+            <el-table :data="trafficData" height="450px">
               <el-table-column
                 prop="clientIp"
                 label="客户端 IP"
@@ -228,7 +230,7 @@ function alertLogQuery(page) {
               />
             </el-table>
             <el-pagination
-              :page-count="trafficPageCount"
+              :total="trafficDataTotal"
               :current-page="trafficCurrentPage"
               @current-change="trafficLogQuery"
               layout="prev, pager, next"
@@ -242,7 +244,7 @@ function alertLogQuery(page) {
             style="display: flex; flex-direction: column"
           >
             <el-divider>告警信息</el-divider>
-            <el-table :data="alertData" height="500px">
+            <el-table :data="alertData" height="450px">
               <el-table-column type="expand">
                 <template #default="props">
                   <!--原来叫详情链接，后面改成详情内容了-->
@@ -259,7 +261,7 @@ function alertLogQuery(page) {
               <el-table-column prop="device" label="告警设备" />
             </el-table>
             <el-pagination
-              :page-count="alertPageCount"
+              :total="alertDataTotal"
               :current-page="alertCurrentPage"
               @current-change="alertLogQuery"
               layout="prev, pager, next"
