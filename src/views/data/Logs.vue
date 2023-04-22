@@ -144,7 +144,7 @@ function alertLogQuery(page) {
     <el-container style="height: 100%">
       <el-header>
         <el-row>
-          <el-col :span="16" style="display: flex">
+          <el-col :span="16" style="display: flex; min-width: 800px">
             <el-date-picker
               v-model="logQueryTimeRange"
               type="datetimerange"
