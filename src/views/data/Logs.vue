@@ -2,6 +2,7 @@
 import axios from "axios";
 
 import { onMounted, ref } from "vue";
+import { ElMessage } from "element-plus";
 
 const logQueryTimeRange = ref("");
 const logQueryTimeRangeShortcuts = [
@@ -64,7 +65,22 @@ let lastLogQueryTypes = ["traffic", "alert"];
 const logQueryTypes = ref(["traffic", "alert"]);
 const logQueryIp = ref("");
 function logQuery() {
+  if (!logQueryTimeRange.value) {
+    ElMessage({
+      message: "请选择时间范围",
+      type: "warning",
+      grouping: true,
+      showClose: true,
+    });
+    return;
+  }
   if (logQueryTypes.value.length === 0) {
+    ElMessage({
+      message: "请选择日志类型",
+      type: "warning",
+      grouping: true,
+      showClose: true,
+    });
     return;
   }
   const queryReqs = [];
