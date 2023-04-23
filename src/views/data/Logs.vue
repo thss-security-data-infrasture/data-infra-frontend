@@ -60,17 +60,32 @@ const logQueryTimeRangeShortcuts = [
     },
   },
 ];
+let lastLogQueryTypes = ["traffic", "alert"];
 const logQueryTypes = ref(["traffic", "alert"]);
 const logQueryIp = ref("");
-async function logQuery() {
-  const promises = [];
+function logQuery() {
+  if (logQueryTypes.value.length === 0) {
+    return;
+  }
+  const queryReqs = [];
   if (logQueryTypes.value.includes("traffic")) {
-    promises.push(trafficLogQuery(1));
+    queryReqs.push(trafficLogQuery(1));
+  } else {
+    if (lastLogQueryTypes.includes("traffic")) {
+      trafficData.value = [];
+      trafficDataTotal.value = 0;
+    }
   }
   if (logQueryTypes.value.includes("alert")) {
-    promises.push(alertLogQuery(1));
+    queryReqs.push(alertLogQuery(1));
+  } else {
+    if (lastLogQueryTypes.includes("alert")) {
+      alertData.value = [];
+      alertDataTotal.value = 0;
+    }
   }
-  await Promise.allSettled(promises);
+  Promise.allSettled(queryReqs);
+  lastLogQueryTypes = logQueryTypes.value;
 }
 
 onMounted(() => {
@@ -94,7 +109,7 @@ function trafficLogQuery(page) {
       start: logQueryTimeRange.value[0].toISOString(),
       end: logQueryTimeRange.value[1].toISOString(),
       ipList: logQueryIp.value.split(","),
-      page: page,
+      page: page - 1,
       size: 10, // 10 items per page
       demo: false,
     })
@@ -104,7 +119,7 @@ function trafficLogQuery(page) {
         startTime: item.startTime.split(".")[0].replaceAll("T", " "),
         endTime: item.endTime.split(".")[0].replaceAll("T", " "),
       }));
-      trafficDataTotal.value = res.data.total;
+      trafficDataTotal.value = Math.min(res.data.total, 1_000); // 最大显示 1k 条
     })
     .finally(() => {
       trafficDataLoading.value = false;
@@ -123,7 +138,7 @@ function alertLogQuery(page) {
       start: logQueryTimeRange.value[0].toISOString(),
       end: logQueryTimeRange.value[1].toISOString(),
       ipList: logQueryIp.value.split(","),
-      page: page,
+      page: page - 1,
       size: 10, // 10 items per page
       demo: false,
     })
@@ -132,7 +147,7 @@ function alertLogQuery(page) {
         ...item,
         time: item.time.split(".")[0].replaceAll("T", " "),
       }));
-      alertDataTotal.value = res.data.total;
+      alertDataTotal.value = Math.min(res.data.total, 1_000); // 最大显示 1k 条
     })
     .finally(() => {
       alertDataLoading.value = false;
@@ -183,7 +198,6 @@ function alertLogQuery(page) {
               </template>
             </el-input>
           </el-col>
-          <el-col :span="8"> </el-col>
         </el-row>
       </el-header>
       <el-main style="height: 100%">
@@ -271,7 +285,7 @@ function alertLogQuery(page) {
             />
           </el-col>
         </el-row>
-        <el-row>
+        <!-- <el-row>
           <el-col :span="11" style="display: flex; flex-direction: column">
             <el-divider>应用信息</el-divider>
           </el-col>
@@ -282,7 +296,7 @@ function alertLogQuery(page) {
           >
             <el-divider>审计信息</el-divider>
           </el-col>
-        </el-row>
+        </el-row> -->
       </el-main>
     </el-container>
   </div>
