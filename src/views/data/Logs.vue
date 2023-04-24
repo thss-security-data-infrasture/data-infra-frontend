@@ -216,12 +216,12 @@ function alertLogQuery(page) {
           </el-col>
         </el-row>
       </el-header>
-      <el-main style="height: 100%">
+      <el-main style="height: 100%; padding-top: 0; padding-bottom: 0">
         <el-row>
           <el-col
             :span="11"
             v-loading.lock="trafficDataLoading"
-            style="display: flex; flex-direction: column"
+            style="display: flex; flex-direction: column; margin-right: -5%"
           >
             <el-divider>流量信息</el-divider>
             <el-table :data="trafficData" height="450px">
@@ -301,8 +301,11 @@ function alertLogQuery(page) {
             />
           </el-col>
         </el-row>
-        <!-- <el-row>
-          <el-col :span="11" style="display: flex; flex-direction: column">
+        <el-row>
+          <el-col
+            :span="11"
+            style="display: flex; flex-direction: column; margin-right: -5%"
+          >
             <el-divider>应用信息</el-divider>
           </el-col>
           <el-col
@@ -312,7 +315,7 @@ function alertLogQuery(page) {
           >
             <el-divider>审计信息</el-divider>
           </el-col>
-        </el-row> -->
+        </el-row>
       </el-main>
     </el-container>
   </div>
