@@ -1071,12 +1071,14 @@ function advancedSearchAuditGraph() {
                     placeholder="请输入 ppid"
                   />
                 </el-form-item>
-                <el-form-item>
+              </el-form>
+              <template #footer>
+                <span class="dialog-footer">
                   <el-button type="primary" @click="advancedSearchAuditGraph">
                     查询
                   </el-button>
-                </el-form-item>
-              </el-form>
+                </span>
+              </template>
             </el-dialog>
             <div
               v-loading.lock="auditGraphLoading"
