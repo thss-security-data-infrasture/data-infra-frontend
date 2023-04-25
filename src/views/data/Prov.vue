@@ -3,7 +3,15 @@ import G6 from "@antv/g6";
 import axios from "axios";
 import svgPanZoom from "svg-pan-zoom";
 
-import { computed, nextTick, onMounted, ref, toRaw, watch } from "vue";
+import {
+  computed,
+  nextTick,
+  onMounted,
+  reactive,
+  ref,
+  toRaw,
+  watch,
+} from "vue";
 import { ElMessage } from "element-plus";
 
 // tools
@@ -605,10 +613,11 @@ function createOverviewGragh(containerId) {
 }
 
 onMounted(() => {
-  const start = new Date("2023-04-04 00:00:00");
-  const end = new Date("2023-04-05 00:00:00");
+  // 最近 24h
+  const end = new Date();
+  const start = new Date();
+  start.setTime(end.getTime() - 3600 * 1000 * 24);
   overviewGraphTimeRange.value = [start, end];
-  overviewGraphIp.value = "10.0.0.193";
   updateOverviewGraph(
     overviewGraphTimeRange.value[0],
     overviewGraphTimeRange.value[1],
@@ -783,7 +792,7 @@ function openAuditGraphDialog() {
   const start = new Date();
   start.setTime(alertTime.getTime() - 300 * 1000);
   const end = new Date();
-  end.setTime(alertTime.getTime() + 300 * 1000);
+  end.setTime(alertTime.getTime());
   auditGraphTimeRange.value = [start, end];
 
   searchAuditGraph();
@@ -839,7 +848,7 @@ function searchAuditGraph() {
       start_time: auditGraphTimeRange.value[0].toISOString(),
       end_time: auditGraphTimeRange.value[1].toISOString(),
       ip: auditGraphIp.value,
-      demo: true,
+      demo: false,
     })
     .then((res) => {
       document.getElementById("audit-graph").innerHTML = "";
@@ -873,6 +882,48 @@ function createNewEmbed(src) {
     });
   });
   return embed;
+}
+
+const showAdvancedSearchDialog = ref(false);
+function openAdvancedSearchDialog() {
+  showAdvancedSearchDialog.value = true;
+}
+function closeAdvancedSearchDialog() {
+  showAdvancedSearchDialog.value = false;
+}
+
+const advancedSearchParams = reactive({ pid: "", ppid: "" });
+function advancedSearchAuditGraph() {
+  // close dialog
+  showAdvancedSearchDialog.value = false;
+  // ajax
+  auditGraphLoading.value = true;
+  axios
+    .post("http://10.0.0.236:8000/api/parser/audit/svg", {
+      start_time: auditGraphTimeRange.value[0].toISOString(),
+      end_time: auditGraphTimeRange.value[1].toISOString(),
+      ip: auditGraphIp.value,
+      adv_params: advancedSearchParams,
+      demo: false,
+    })
+    .then((res) => {
+      document.getElementById("audit-graph").innerHTML = "";
+      const url = URL.createObjectURL(
+        new Blob([res.data], { type: "image/svg+xml" })
+      );
+      nextTick(() => {
+        createNewEmbed(url);
+        auditGraphLoading.value = false;
+      });
+    })
+    .catch(() => {
+      auditGraphLoading.value = false;
+    })
+    .finally(() => {
+      // reset
+      advancedSearchParams.pid = "";
+      advancedSearchParams.ppid = "";
+    });
 }
 </script>
 
@@ -973,11 +1024,60 @@ function createNewEmbed(src) {
               start-placeholder="开始时间"
               end-placeholder="结束时间"
             />
-            <el-button @click="searchAuditGraph" style="vertical-align: top">
+            <el-button
+              @click="searchAuditGraph"
+              :disabled="auditGraphLoading"
+              style="vertical-align: top"
+            >
               <el-icon>
                 <Search />
               </el-icon>
             </el-button>
+            <el-link
+              type="primary"
+              @click="openAdvancedSearchDialog"
+              :disabled="auditGraphLoading"
+              style="vertical-align: top; line-height: 32px; margin-left: 20px"
+            >
+              高级搜索
+            </el-link>
+            <el-dialog
+              v-model="showAdvancedSearchDialog"
+              :before-close="closeAdvancedSearchDialog"
+              width="30%"
+              title="高级搜索"
+              append-to-body
+            >
+              <el-form :model="advancedSearchParams" label-width="120px">
+                <el-form-item label="时间范围">
+                  <el-date-picker
+                    v-model="auditGraphTimeRange"
+                    type="datetimerange"
+                    :shortcuts="auditGraphTimeRangeShortcuts"
+                    range-separator="-"
+                    start-placeholder="开始时间"
+                    end-placeholder="结束时间"
+                  />
+                </el-form-item>
+                <el-form-item label="pid">
+                  <el-input
+                    v-model="advancedSearchParams.pid"
+                    placeholder="请输入 pid"
+                  />
+                </el-form-item>
+                <el-form-item label="ppid">
+                  <el-input
+                    v-model="advancedSearchParams.ppid"
+                    placeholder="请输入 ppid"
+                  />
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="advancedSearchAuditGraph">
+                    查询
+                  </el-button>
+                </el-form-item>
+              </el-form>
+            </el-dialog>
             <div
               v-loading.lock="auditGraphLoading"
               id="audit-graph"
