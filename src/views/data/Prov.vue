@@ -1102,12 +1102,14 @@ function advancedSearchAuditGraph() {
                   <el-input
                     v-model="advancedSearchParams.pid"
                     placeholder="请输入 pid"
+                    clearable
                   />
                 </el-form-item>
                 <el-form-item label="path">
                   <el-input
                     v-model="advancedSearchParams.path"
                     placeholder="请输入 path"
+                    clearable
                   />
                 </el-form-item>
               </el-form>
