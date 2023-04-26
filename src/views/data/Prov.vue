@@ -27,7 +27,7 @@ function nodeTypeToShape(type) {
   }
 }
 
-function getTooltip(model) {
+function getTooltip(model, is_center = false) {
   // 边
   if (model.hasOwnProperty("source") && model.hasOwnProperty("target")) {
     if (model.hasOwnProperty("ts")) {
@@ -44,10 +44,13 @@ function getTooltip(model) {
   } else {
     if (model.node_type === "host") {
       if (model.hasOwnProperty("ip")) {
-        return `<div>
-                  <p>ip: ${model.ip}</p>
-                  <p>alerts: ${model.alerts}</p>
-                </div>`;
+        let host_tooltip = `<div>
+                              <p>ip: ${model.ip}</p>`;
+        if (!is_center) {
+          host_tooltip += `   <p>alerts: ${model.alerts}</p>`;
+        }
+        host_tooltip += `   </div>`;
+        return host_tooltip;
       } else {
         return `<div>
                   <p>id: ${model.id}</p>
@@ -63,10 +66,17 @@ function getTooltip(model) {
                 <p>id: ${model.id}</p>
               </div>`;
     } else if (model.node_type === "alert") {
-      return `<div>
-                <p>ip: ${model.ip}</p>
-                <p>time: ${model.time}</p>
-              </div>`;
+      let alert_tooltip = `<div>
+                             <p>ip: ${model.ip}</p>
+                             <p>time: ${model.time}</p>`;
+      if (model.hasOwnProperty("alert_pid")) {
+        alert_tooltip += `   <p>pid: ${model.alert_pid}</p>`;
+      }
+      if (model.hasOwnProperty("alert_filepath")) {
+        alert_tooltip += `   <p>path: ${model.alert_filepath}</p>`;
+      }
+      alert_tooltip += `   </div>`;
+      return alert_tooltip;
     } else {
       return ``;
     }
@@ -613,10 +623,9 @@ function createOverviewGragh(containerId) {
 }
 
 onMounted(() => {
-  // 最近 24h
-  const end = new Date();
-  const start = new Date();
-  start.setTime(end.getTime() - 3600 * 1000 * 24);
+  const start = new Date("2023-04-20 00:00:00");
+  const end = new Date("2023-04-21 00:00:00");
+  overviewGraphIp.value = "10.0.0.193";
   overviewGraphTimeRange.value = [start, end];
   updateOverviewGraph(
     overviewGraphTimeRange.value[0],
@@ -653,7 +662,13 @@ let detailGraphContainer = null;
 
 const detailGraphHighlightedNode = ref(null);
 const isDetailGraphSelected = computed(() => {
-  return detailGraphHighlightedNode.value !== null;
+  return (
+    detailGraphHighlightedNode.value !== null &&
+    (detailGraphHighlightedNode.value.getModel().hasOwnProperty("alert_pid") ||
+      detailGraphHighlightedNode.value
+        .getModel()
+        .hasOwnProperty("alert_filepath"))
+  );
 });
 
 const detailGraphColSpan = computed(() => {
@@ -716,7 +731,7 @@ function createDetailGragh(containerId) {
         getContent(evt) {
           const { item } = evt;
           const model = item.getModel();
-          return getTooltip(model);
+          return getTooltip(model, true);
         },
         offsetX: 10,
         offsetY: 20,
@@ -795,7 +810,21 @@ function openAuditGraphDialog() {
   end.setTime(alertTime.getTime());
   auditGraphTimeRange.value = [start, end];
 
-  searchAuditGraph();
+  let advanced = false;
+  if (detailGraphHighlightedNode.value.getModel().hasOwnProperty("alert_pid")) {
+    advancedSearchParams.pid =
+      detailGraphHighlightedNode.value.getModel().alert_pid;
+    advanced = true;
+  }
+  if (
+    detailGraphHighlightedNode.value.getModel().hasOwnProperty("alert_filepath")
+  ) {
+    advancedSearchParams.path =
+      detailGraphHighlightedNode.value.getModel().alert_filepath;
+    advanced = true;
+  }
+
+  searchAuditGraph(advanced);
 }
 function closeAuditGraphDialog() {
   showAuditGraphDialog.value = false;
@@ -841,15 +870,25 @@ const auditGraphTimeRangeShortcuts = [
     },
   },
 ];
-function searchAuditGraph() {
+function searchAuditGraph(advanced = false) {
   auditGraphLoading.value = true;
+
+  // dialog 刚打开的时候发送的 payload 不需要 reset
+  let payload = {
+    start_time: auditGraphTimeRange.value[0].toISOString(),
+    end_time: auditGraphTimeRange.value[1].toISOString(),
+    ip: auditGraphIp.value,
+    demo: false,
+  };
+  if (advanced) {
+    payload = {
+      ...payload,
+      ...advancedSearchParams,
+    };
+  }
+
   axios
-    .post("http://10.0.0.236:8000/api/parser/audit/svg", {
-      start_time: auditGraphTimeRange.value[0].toISOString(),
-      end_time: auditGraphTimeRange.value[1].toISOString(),
-      ip: auditGraphIp.value,
-      demo: false,
-    })
+    .post("http://10.0.0.236:8000/api/parser/audit/svg", payload)
     .then((res) => {
       document.getElementById("audit-graph").innerHTML = "";
       const url = URL.createObjectURL(
@@ -892,7 +931,7 @@ function closeAdvancedSearchDialog() {
   showAdvancedSearchDialog.value = false;
 }
 
-const advancedSearchParams = reactive({ pid: "", ppid: "" });
+const advancedSearchParams = reactive({ pid: "", path: "" });
 function advancedSearchAuditGraph() {
   // close dialog
   showAdvancedSearchDialog.value = false;
@@ -922,7 +961,7 @@ function advancedSearchAuditGraph() {
     .finally(() => {
       // reset
       advancedSearchParams.pid = "";
-      advancedSearchParams.ppid = "";
+      advancedSearchParams.path = "";
     });
 }
 </script>
@@ -1025,7 +1064,7 @@ function advancedSearchAuditGraph() {
               end-placeholder="结束时间"
             />
             <el-button
-              @click="searchAuditGraph"
+              @click="searchAuditGraph(false)"
               :disabled="auditGraphLoading"
               style="vertical-align: top"
             >
@@ -1065,17 +1104,19 @@ function advancedSearchAuditGraph() {
                     placeholder="请输入 pid"
                   />
                 </el-form-item>
-                <el-form-item label="ppid">
+                <el-form-item label="path">
                   <el-input
-                    v-model="advancedSearchParams.ppid"
-                    placeholder="请输入 ppid"
+                    v-model="advancedSearchParams.path"
+                    placeholder="请输入 path"
                   />
                 </el-form-item>
               </el-form>
               <template #footer>
                 <span class="dialog-footer">
                   <el-button type="primary" @click="advancedSearchAuditGraph">
-                    查询
+                    <el-icon>
+                      <Search />
+                    </el-icon>
                   </el-button>
                 </span>
               </template>
