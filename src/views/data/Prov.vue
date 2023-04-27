@@ -623,8 +623,8 @@ function createOverviewGragh(containerId) {
 }
 
 onMounted(() => {
-  const start = new Date("2023-04-20 00:00:00");
-  const end = new Date("2023-04-21 00:00:00");
+  const start = new Date("2023-04-27 00:00:00");
+  const end = new Date("2023-04-27 18:00:00");
   overviewGraphIp.value = "10.0.0.193";
   overviewGraphTimeRange.value = [start, end];
   updateOverviewGraph(
@@ -883,7 +883,7 @@ function searchAuditGraph(advanced = false) {
   if (advanced) {
     payload = {
       ...payload,
-      ...advancedSearchParams,
+      adv_param: advancedSearchParams,
     };
   }
 
@@ -935,34 +935,7 @@ const advancedSearchParams = reactive({ pid: "", path: "" });
 function advancedSearchAuditGraph() {
   // close dialog
   showAdvancedSearchDialog.value = false;
-  // ajax
-  auditGraphLoading.value = true;
-  axios
-    .post("http://10.0.0.236:8000/api/parser/audit/svg", {
-      start_time: auditGraphTimeRange.value[0].toISOString(),
-      end_time: auditGraphTimeRange.value[1].toISOString(),
-      ip: auditGraphIp.value,
-      adv_params: advancedSearchParams,
-      demo: false,
-    })
-    .then((res) => {
-      document.getElementById("audit-graph").innerHTML = "";
-      const url = URL.createObjectURL(
-        new Blob([res.data], { type: "image/svg+xml" })
-      );
-      nextTick(() => {
-        createNewEmbed(url);
-        auditGraphLoading.value = false;
-      });
-    })
-    .catch(() => {
-      auditGraphLoading.value = false;
-    })
-    .finally(() => {
-      // reset
-      advancedSearchParams.pid = "";
-      advancedSearchParams.path = "";
-    });
+  searchAuditGraph(true);
 }
 </script>
 
@@ -1080,6 +1053,11 @@ function advancedSearchAuditGraph() {
             >
               高级搜索
             </el-link>
+            <span style="vertical-align: top; line-height: 32px">
+              （当前参数： pid:{{ advancedSearchParams.pid }}, path:{{
+                advancedSearchParams.path
+              }}，直接搜索<strong>不会</strong>使用此处的参数）
+            </span>
             <el-dialog
               v-model="showAdvancedSearchDialog"
               :before-close="closeAdvancedSearchDialog"
