@@ -21,7 +21,7 @@ const openedMenuItems = ref(["/data", "/info", "/knowledge"]);
               </el-icon>
               <span>数据查询</span>
             </template>
-            <el-menu-item index="/data/fields">字段表查询</el-menu-item>
+            <!-- <el-menu-item index="/data/fields">字段表查询</el-menu-item> -->
             <el-menu-item index="/data/logs">融合日志查询</el-menu-item>
             <el-menu-item index="/data/prov">溯源图查询</el-menu-item>
           </el-sub-menu>
@@ -34,9 +34,9 @@ const openedMenuItems = ref(["/data", "/info", "/knowledge"]);
             </template>
             <el-menu-item index="/info/assets">资产列表</el-menu-item>
             <el-menu-item index="/info/vuls">漏洞扫描</el-menu-item>
-            <el-menu-item index="/info/situation">系统态势</el-menu-item>
+            <!-- <el-menu-item index="/info/situation">系统态势</el-menu-item> -->
           </el-sub-menu>
-          <el-sub-menu index="/knowledge">
+          <!-- <el-sub-menu index="/knowledge">
             <template #title>
               <el-icon>
                 <Document />
@@ -46,7 +46,7 @@ const openedMenuItems = ref(["/data", "/info", "/knowledge"]);
             <el-menu-item index="/knowledge/courses">教学材料</el-menu-item>
             <el-menu-item index="/knowledge/shares">经验分享</el-menu-item>
             <el-menu-item index="/knowledge/recomms">知识推荐</el-menu-item>
-          </el-sub-menu>
+          </el-sub-menu> -->
         </el-menu>
       </el-aside>
       <el-main>
