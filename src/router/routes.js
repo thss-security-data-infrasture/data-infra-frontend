@@ -2,7 +2,7 @@ export default [
   {
     path: "/",
     component: () => import("~/views/Container.vue"),
-    redirect: "/data/fields",
+    redirect: "/data/prov",
     children: [
       {
         path: "/data/fields",
