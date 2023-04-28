@@ -807,7 +807,7 @@ function openAuditGraphDialog() {
   const start = new Date();
   start.setTime(alertTime.getTime() - 300 * 1000);
   const end = new Date();
-  end.setTime(alertTime.getTime());
+  end.setTime(Math.min(end.getTime(), alertTime.getTime() + 300 * 1000));
   auditGraphTimeRange.value = [start, end];
 
   let advanced = false;
