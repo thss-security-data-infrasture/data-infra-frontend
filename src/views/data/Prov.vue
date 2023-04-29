@@ -814,6 +814,8 @@ function openAuditGraphDialog() {
   if (detailGraphHighlightedNode.value.getModel().hasOwnProperty("alert_pid")) {
     advancedSearchParams.pid =
       detailGraphHighlightedNode.value.getModel().alert_pid;
+    // NOTE: 暂时把 ppid 设置成和 pid 一样的值
+    advancedSearchParams.ppid = advancedSearchParams.pid;
     advanced = true;
   }
   if (
@@ -931,7 +933,7 @@ function closeAdvancedSearchDialog() {
   showAdvancedSearchDialog.value = false;
 }
 
-const advancedSearchParams = reactive({ pid: "", path: "" });
+const advancedSearchParams = reactive({ pid: "", ppid: "", path: "" });
 function advancedSearchAuditGraph() {
   // close dialog
   showAdvancedSearchDialog.value = false;
@@ -1054,7 +1056,9 @@ function advancedSearchAuditGraph() {
               高级搜索
             </el-link>
             <span style="vertical-align: top; line-height: 32px">
-              （当前参数： pid:{{ advancedSearchParams.pid }}, path:{{
+              （当前参数 -> pid:{{ advancedSearchParams.pid }}, ppid:{{
+                advancedSearchParams.ppid
+              }}, path:{{
                 advancedSearchParams.path
               }}，直接搜索<strong>不会</strong>使用此处的参数）
             </span>
@@ -1080,6 +1084,13 @@ function advancedSearchAuditGraph() {
                   <el-input
                     v-model="advancedSearchParams.pid"
                     placeholder="请输入 pid"
+                    clearable
+                  />
+                </el-form-item>
+                <el-form-item label="ppid">
+                  <el-input
+                    v-model="advancedSearchParams.ppid"
+                    placeholder="请输入 ppid"
                     clearable
                   />
                 </el-form-item>
