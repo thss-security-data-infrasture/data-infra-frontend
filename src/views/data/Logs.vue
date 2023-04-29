@@ -1,7 +1,7 @@
 <script setup>
 import axios from "axios";
 
-import { onMounted, ref } from "vue";
+import { onMounted, reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
 
 const logQueryTimeRange = ref("");
@@ -61,8 +61,8 @@ const logQueryTimeRangeShortcuts = [
     },
   },
 ];
-let lastLogQueryTypes = ["traffic", "alert"];
-const logQueryTypes = ref(["traffic", "alert"]);
+let lastLogQueryTypes = [];
+const logQueryTypes = ref(["traffic", "alert", "app"]);
 const logQueryIp = ref("");
 function logQuery() {
   if (!logQueryTimeRange.value) {
@@ -100,13 +100,25 @@ function logQuery() {
       alertDataTotal.value = 0;
     }
   }
+  if (logQueryTypes.value.includes("app")) {
+    queryReqs.push(appLogPreQuery());
+  } else {
+    // if (lastLogQueryTypes.includes("app")) {
+    //   appDataAttrsMap.value = {};
+    //   appDataTotalMap.value = {};
+    //   appDataDisplayMap.value = {};
+    //   appDataCurrentPageMap.value = {};
+    //   appDataIsLoadingMap.value = {};
+    //   appDataLoadedMap.value = {};
+    // }
+  }
   Promise.allSettled(queryReqs);
   lastLogQueryTypes = logQueryTypes.value;
 }
 
 onMounted(() => {
-  const start = new Date("2023-04-04 00:00:00");
-  const end = new Date("2023-04-05 00:00:00");
+  const start = new Date("2023-04-26 00:00:00");
+  const end = new Date("2023-04-29 00:00:00");
   logQueryTimeRange.value = [start, end];
   logQueryIp.value = "10.0.0.193";
   // query on page loaded
@@ -168,6 +180,86 @@ function alertLogQuery(page) {
     .finally(() => {
       alertDataLoading.value = false;
     });
+}
+
+const appDataLoading = ref(false);
+const activeApps = ref([]);
+const appDataAttrsMap = ref({});
+const appDataTotalMap = ref({});
+const appDataDisplayMap = ref({});
+const appDataCurrentPageMap = ref({});
+const appDataIsLoadingMap = reactive({});
+const appDataLoadedMap = ref({});
+function appLogPreQuery() {
+  appDataLoading.value = true;
+  axios
+    .get("http://10.0.0.236:8000/api/fused_info/app/pre")
+    .then((res) => {
+      appDataAttrsMap.value = res.data.columns;
+      Object.keys(res.data.columns).forEach((key) => {
+        appDataTotalMap.value[key] = [];
+        appDataDisplayMap.value[key] = [];
+        appDataCurrentPageMap.value[key] = 1;
+        appDataIsLoadingMap[key] = false;
+        appDataLoadedMap.value[key] = false;
+      });
+    })
+    .finally(() => {
+      appDataLoading.value = false;
+    });
+}
+function getActiveAppsData(appNames) {
+  if (appNames.length > 0) {
+    const appsToQuery = appNames.filter((appName) => {
+      return !appDataLoadedMap.value[appName];
+    });
+    if (appsToQuery.length > 0) {
+      appsToQuery.forEach((appName) => {
+        appDataIsLoadingMap[appName] = true;
+      });
+      axios
+        .post("http://10.0.0.236:8000/api/fused_info/app", {
+          start: logQueryTimeRange.value[0].toISOString(),
+          end: logQueryTimeRange.value[1].toISOString(),
+          ipList: logQueryIp.value.split(","),
+          appList: appsToQuery,
+          page: 0,
+          size: 1000, // load all items by default because of backend's limitation
+        })
+        .then((res) => {
+          appsToQuery.forEach((appName) => {
+            appDataTotalMap.value[appName] = res.data.data[appName];
+            appDataDisplayMap.value[appName] = appDataTotalMap.value[appName]
+              .slice(0, 10)
+              .map((item) => item.parsed);
+            appDataCurrentPageMap.value[appName] = 1;
+            appDataLoadedMap.value[appName] = true;
+          });
+        })
+        .finally(() => {
+          appsToQuery.forEach((appName) => {
+            appDataIsLoadingMap[appName] = false;
+          });
+        });
+    }
+  }
+}
+function appDataNextPage(page, appName) {
+  appDataCurrentPageMap.value[appName] = page;
+  appDataDisplayMap.value[appName] = appDataTotalMap.value[appName]
+    .slice((page - 1) * 10, page * 10)
+    .map((item) => item.parsed);
+}
+function appDataColumnWidth(column) {
+  if (column === "timestamp") {
+    return 230;
+  } else if (column === "http_user_agent") {
+    return 200;
+  } else if (column === "uri") {
+    return 300;
+  } else {
+    return column.length * 10 + 20;
+  }
 }
 </script>
 
@@ -304,9 +396,41 @@ function alertLogQuery(page) {
         <el-row>
           <el-col
             :span="11"
+            v-loading.lock="appDataLoading"
             style="display: flex; flex-direction: column; margin-right: -5%"
           >
             <el-divider>应用信息</el-divider>
+            <el-collapse v-model="activeApps" @change="getActiveAppsData">
+              <el-collapse-item
+                v-for="(appName, appNameIdx) of Object.keys(appDataAttrsMap)"
+                :title="appName"
+                :name="appName"
+                :key="'name' + appNameIdx"
+              >
+                <div
+                  v-if="activeApps.includes(appName)"
+                  v-loading.lock="appDataIsLoadingMap[appName]"
+                  style="display: flex; flex-direction: column"
+                >
+                  <el-table :data="appDataDisplayMap[appName]">
+                    <el-table-column
+                      v-for="(column, columnIdx) of appDataAttrsMap[appName]"
+                      :prop="column"
+                      :label="column"
+                      :key="'column' + columnIdx"
+                      :min-width="appDataColumnWidth(column)"
+                    />
+                  </el-table>
+                  <el-pagination
+                    :total="appDataTotalMap[appName].length"
+                    :current-page="appDataCurrentPageMap[appName]"
+                    @current-change="appDataNextPage($event, appName)"
+                    layout="prev, pager, next"
+                    style="margin: 0 auto"
+                  />
+                </div>
+              </el-collapse-item>
+            </el-collapse>
           </el-col>
           <el-col
             :span="11"
