@@ -308,7 +308,14 @@ function appDataColumnWidth(column) {
           </el-col>
         </el-row>
       </el-header>
-      <el-main style="height: 100%; padding-top: 0; padding-bottom: 0">
+      <el-main
+        style="
+          height: 100%;
+          padding-top: 0;
+          padding-right: 0;
+          padding-bottom: 0;
+        "
+      >
         <el-row>
           <el-col
             :span="11"

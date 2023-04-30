@@ -49,7 +49,7 @@ const openedMenuItems = ref(["/data", "/info", "/knowledge"]);
           </el-sub-menu> -->
         </el-menu>
       </el-aside>
-      <el-main>
+      <el-main style="padding-right: 0">
         <router-view />
       </el-main>
     </el-container>
