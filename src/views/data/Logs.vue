@@ -86,39 +86,15 @@ function logQuery() {
   const queryReqs = [];
   if (logQueryTypes.value.includes("traffic")) {
     queryReqs.push(trafficLogQuery(1));
-  } else {
-    if (lastLogQueryTypes.includes("traffic")) {
-      trafficData.value = [];
-      trafficDataTotal.value = 0;
-    }
   }
   if (logQueryTypes.value.includes("alert")) {
-    queryReqs.push(alertLogQuery(1));
-  } else {
-    if (lastLogQueryTypes.includes("alert")) {
-      alertData.value = [];
-      alertDataTotal.value = 0;
-    }
+    queryReqs.push(alertLogQuery());
   }
   if (logQueryTypes.value.includes("app")) {
     queryReqs.push(appLogPreQuery());
-  } else {
-    // if (lastLogQueryTypes.includes("app")) {
-    //   appDataAttrsMap.value = {};
-    //   appDataTotalMap.value = {};
-    //   appDataDisplayMap.value = {};
-    //   appDataCurrentPageMap.value = {};
-    //   appDataIsLoadingMap.value = {};
-    //   appDataLoadedMap.value = {};
-    // }
   }
   if (logQueryTypes.value.includes("audit")) {
     queryReqs.push(auditLogQuery(1));
-  } else {
-    if (lastLogQueryTypes.includes("audit")) {
-      auditData.value = [];
-      auditDataTotal.value = 0;
-    }
   }
   Promise.allSettled(queryReqs);
   lastLogQueryTypes = logQueryTypes.value;
@@ -164,18 +140,18 @@ function trafficLogQuery(page) {
 
 const alertDataLoading = ref(false);
 const alertData = ref([]);
+const alertDataDisplay = ref([]);
 const alertDataTotal = ref(0);
 const alertCurrentPage = ref(1);
-function alertLogQuery(page) {
-  alertCurrentPage.value = page;
+function alertLogQuery() {
   alertDataLoading.value = true;
   axios
     .post("http://10.0.0.236:8000/api/fused_info/alert", {
       start: logQueryTimeRange.value[0].toISOString(),
       end: logQueryTimeRange.value[1].toISOString(),
       ipList: logQueryIp.value.split(","),
-      page: page - 1,
-      size: 10, // 10 items per page
+      page: 0,
+      size: 1000, // load all items by default because of backend's limitation
       demo: false,
     })
     .then((res) => {
@@ -183,11 +159,16 @@ function alertLogQuery(page) {
         ...item,
         time: item.time.split(".")[0].replaceAll("T", " "),
       }));
-      alertDataTotal.value = Math.min(res.data.total, 1_000); // 最大显示 1k 条
+      alertDataDisplay.value = alertData.value.slice(0, 10);
+      alertDataTotal.value = res.data.total;
     })
     .finally(() => {
       alertDataLoading.value = false;
     });
+}
+function alertDataNextPage(page) {
+  alertCurrentPage.value = page;
+  alertDataDisplay.value = alertData.value.slice((page - 1) * 10, page * 10);
 }
 
 const appDataLoading = ref(false);
@@ -272,10 +253,10 @@ function appDataColumnWidth(column) {
 
 const auditDataLoading = ref(false);
 const auditData = ref([]);
+const auditDataDisplay = ref([]);
 const auditDataTotal = ref(0);
 const auditCurrentPage = ref(1);
-function auditLogQuery(page) {
-  auditCurrentPage.value = page;
+function auditLogQuery() {
   auditDataLoading.value = true;
   axios
     .post("http://10.0.0.236:8000/api/fused_info/audit", {
@@ -285,8 +266,8 @@ function auditLogQuery(page) {
       adv_param: {
         syscall_whitelist: ["execve", "fork", "vfork", "clone", "clone3"],
       },
-      page: page - 1,
-      size: 10, // 10 items per page
+      page: 0,
+      size: 1000, // load all items by default because of backend's limitation
       demo: false,
     })
     .then((res) => {
@@ -294,11 +275,16 @@ function auditLogQuery(page) {
         ...item,
         time: item.time.split(".")[0].replaceAll("T", " "),
       }));
-      auditDataTotal.value = Math.min(res.data.total, 1_000); // 最大显示 1k 条
+      auditDataDisplay.value = auditData.value.slice(0, 10);
+      auditDataTotal.value = res.data.total;
     })
     .finally(() => {
       auditDataLoading.value = false;
     });
+}
+function auditDataNextPage(page) {
+  auditCurrentPage.value = page;
+  auditDataDisplay.value = auditData.value.slice((page - 1) * 10, page * 10);
 }
 </script>
 
@@ -414,7 +400,7 @@ function auditLogQuery(page) {
             style="display: flex; flex-direction: column"
           >
             <el-divider>告警信息</el-divider>
-            <el-table :data="alertData" height="450px">
+            <el-table :data="alertDataDisplay" height="450px">
               <el-table-column type="expand">
                 <template #default="props">
                   <!--原来叫详情链接，后面改成详情内容了-->
@@ -437,7 +423,7 @@ function auditLogQuery(page) {
             <el-pagination
               :total="alertDataTotal"
               :current-page="alertCurrentPage"
-              @current-change="alertLogQuery"
+              @current-change="alertDataNextPage"
               layout="prev, pager, next"
               style="margin: 0 auto"
             />
@@ -489,10 +475,11 @@ function auditLogQuery(page) {
             style="display: flex; flex-direction: column"
           >
             <el-divider>审计信息</el-divider>
-            <el-table :data="auditData" height="520px">
+            <el-table :data="auditDataDisplay" height="520px">
               <el-table-column type="expand">
                 <template #default="props">
-                  <p>proctitle: <pre>{{ props.row.title }}</pre></p>
+                  <p>proctitle:</p>
+                  <pre>{{ props.row.title }}</pre>
                 </template>
               </el-table-column>
               <el-table-column prop="host" label="宿主机" min-width="100px" />
@@ -512,7 +499,7 @@ function auditLogQuery(page) {
             <el-pagination
               :total="auditDataTotal"
               :current-page="auditCurrentPage"
-              @current-change="auditLogQuery"
+              @current-change="auditDataNextPage"
               layout="prev, pager, next"
               style="margin: 0 auto"
             />
