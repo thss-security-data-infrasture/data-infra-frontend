@@ -62,7 +62,7 @@ const logQueryTimeRangeShortcuts = [
   },
 ];
 let lastLogQueryTypes = [];
-const logQueryTypes = ref(["traffic", "alert", "app"]);
+const logQueryTypes = ref(["traffic", "alert",  "app", "audit"]);
 const logQueryIp = ref("");
 function logQuery() {
   if (!logQueryTimeRange.value) {
@@ -111,6 +111,14 @@ function logQuery() {
     //   appDataIsLoadingMap.value = {};
     //   appDataLoadedMap.value = {};
     // }
+  }
+  if (logQueryTypes.value.includes("audit")) {
+    queryReqs.push(auditLogQuery(1));
+  } else {
+    if (lastLogQueryTypes.includes("audit")) {
+      auditData.value = [];
+      auditDataTotal.value = 0;
+    }
   }
   Promise.allSettled(queryReqs);
   lastLogQueryTypes = logQueryTypes.value;
@@ -260,6 +268,37 @@ function appDataColumnWidth(column) {
   } else {
     return column.length * 10 + 20;
   }
+}
+
+const auditDataLoading = ref(false);
+const auditData = ref([]);
+const auditDataTotal = ref(0);
+const auditCurrentPage = ref(1);
+function auditLogQuery(page) {
+  auditCurrentPage.value = page;
+  auditDataLoading.value = true;
+  axios
+    .post("http://10.0.0.236:8000/api/fused_info/audit", {
+      start: logQueryTimeRange.value[0].toISOString(),
+      end: logQueryTimeRange.value[1].toISOString(),
+      ipList: logQueryIp.value.split(","),
+      adv_param: {
+        syscall_whitelist: ["execve", "fork", "vfork", "clone", "clone3"],
+      },
+      page: page - 1,
+      size: 10, // 10 items per page
+      demo: false,
+    })
+    .then((res) => {
+      auditData.value = res.data.data.map((item) => ({
+        ...item,
+        time: item.time.split(".")[0].replaceAll("T", " "),
+      }));
+      auditDataTotal.value = Math.min(res.data.total, 1_000); // 最大显示 1k 条
+    })
+    .finally(() => {
+      auditDataLoading.value = false;
+    });
 }
 </script>
 
@@ -442,9 +481,31 @@ function appDataColumnWidth(column) {
           <el-col
             :span="11"
             :offset="2"
+            v-loading.lock="auditDataLoading"
             style="display: flex; flex-direction: column"
           >
             <el-divider>审计信息</el-divider>
+            <el-table :data="auditData" height="520px">
+              <el-table-column prop="host" label="宿主机" min-width="70px" />
+              <el-table-column prop="time" label="时间" min-width="60px" />
+              <el-table-column prop="syscall" label="系统调用" min-width="60px"
+              />
+              <el-table-column prop="pid" label="进程ID" min-width="60px" />
+              <el-table-column prop="ppid" label="父进程ID" min-width="60px" />
+              <el-table-column prop="pname" label="进程名" min-width="60px" />
+              <el-table-column prop="title" label="标题" min-width="60px" />
+              <el-table-column prop="exe" label="执行文件" min-width="60px" />
+              <el-table-column prop="cwd" label="当前工作目录" min-width="80px"
+              />
+              <el-table-column prop="path" label="路径" min-width="60px" />
+            </el-table>
+            <el-pagination
+              :total="auditDataTotal"
+              :current-page="auditCurrentPage"
+              @current-change="auditLogQuery"
+              layout="prev, pager, next"
+              style="margin: 0 auto"
+            />
           </el-col>
         </el-row>
       </el-main>
