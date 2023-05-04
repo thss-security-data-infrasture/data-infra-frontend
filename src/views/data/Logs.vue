@@ -62,7 +62,7 @@ const logQueryTimeRangeShortcuts = [
   },
 ];
 let lastLogQueryTypes = [];
-const logQueryTypes = ref(["traffic", "alert",  "app", "audit"]);
+const logQueryTypes = ref(["traffic", "alert", "app", "audit"]);
 const logQueryIp = ref("");
 function logQuery() {
   if (!logQueryTimeRange.value) {
@@ -425,10 +425,14 @@ function auditLogQuery(page) {
                   </ul>
                 </template>
               </el-table-column>
-              <el-table-column prop="host" label="主机" />
+              <el-table-column prop="host" label="主机" min-width="100px" />
               <el-table-column prop="alert" label="告警名称" />
-              <el-table-column prop="time" label="时间" />
-              <el-table-column prop="device" label="告警设备" />
+              <el-table-column prop="time" label="时间" min-width="200px" />
+              <el-table-column
+                prop="device"
+                label="告警设备"
+                min-width="100px"
+              />
             </el-table>
             <el-pagination
               :total="alertDataTotal"
@@ -486,18 +490,24 @@ function auditLogQuery(page) {
           >
             <el-divider>审计信息</el-divider>
             <el-table :data="auditData" height="520px">
-              <el-table-column prop="host" label="宿主机" min-width="70px" />
-              <el-table-column prop="time" label="时间" min-width="60px" />
-              <el-table-column prop="syscall" label="系统调用" min-width="60px"
+              <el-table-column type="expand">
+                <template #default="props">
+                  <p>proctitle: <pre>{{ props.row.title }}</pre></p>
+                </template>
+              </el-table-column>
+              <el-table-column prop="host" label="宿主机" min-width="100px" />
+              <el-table-column prop="time" label="时间" min-width="200px" />
+              <el-table-column prop="syscall" label="系统调用" />
+              <el-table-column prop="pid" label="进程ID" />
+              <el-table-column prop="ppid" label="父进程ID" min-width="100px" />
+              <el-table-column prop="pname" label="进程名" />
+              <el-table-column prop="exe" label="执行文件" min-width="150px" />
+              <el-table-column
+                prop="cwd"
+                label="当前工作目录"
+                min-width="150px"
               />
-              <el-table-column prop="pid" label="进程ID" min-width="60px" />
-              <el-table-column prop="ppid" label="父进程ID" min-width="60px" />
-              <el-table-column prop="pname" label="进程名" min-width="60px" />
-              <el-table-column prop="title" label="标题" min-width="60px" />
-              <el-table-column prop="exe" label="执行文件" min-width="60px" />
-              <el-table-column prop="cwd" label="当前工作目录" min-width="80px"
-              />
-              <el-table-column prop="path" label="路径" min-width="60px" />
+              <el-table-column prop="path" label="路径" min-width="150px" />
             </el-table>
             <el-pagination
               :total="auditDataTotal"
