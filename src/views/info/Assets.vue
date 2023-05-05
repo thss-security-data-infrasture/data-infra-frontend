@@ -4,13 +4,17 @@ import axios from "axios";
 import { onMounted, ref } from "vue";
 
 onMounted(() => {
-  const queryReqs = [
+  Promise.allSettled([
     queryHostInfo(),
+    queryWebsiteInfo(),
+    queryDockerImageInfo(),
+    queryDockerContainerInfo(),
+    queryDockerNetworkInfo(),
     queryProcessInfo(),
     queryPortInfo(),
     queryAppInfo(),
-  ];
-  Promise.allSettled(queryReqs);
+    queryUserInfo(),
+  ]);
 });
 
 const hostNum = ref(0);
@@ -142,18 +146,176 @@ function queryAppInfo() {
 
 const userNum = ref(0);
 const userLoading = ref(false);
+const userData = ref([]);
+const userDataDisplay = ref([]);
+const userDataColumns = ref([]);
+const userDataCurrentPage = ref(1);
+function userDataNextPage(page) {
+  userDataCurrentPage.value = page;
+  userDataDisplay.value = userData.value.slice((page - 1) * 10, page * 10);
+}
+function queryUserInfo() {
+  userLoading.value = true;
+  axios
+    .get("http://10.0.0.236:8000/api/assets/overview/user")
+    .then((res) => {
+      userData.value = res.data.rows;
+      userDataDisplay.value = res.data.rows.slice(0, 10);
+
+      const columns = [];
+      userDataDisplay.value.forEach((item) => {
+        columns.push(...Object.keys(item));
+      });
+      userDataColumns.value = [...new Set(columns)];
+
+      userNum.value = res.data.total;
+    })
+    .finally(() => {
+      userLoading.value = false;
+    });
+}
 
 const websiteNum = ref(0);
 const websiteLoading = ref(false);
+const websiteData = ref([]);
+const websiteDataDisplay = ref([]);
+const websiteDataColumns = ref([]);
+const websiteDataCurrentPage = ref(1);
+function websiteDataNextPage(page) {
+  websiteDataCurrentPage.value = page;
+  websiteDataDisplay.value = websiteData.value.slice(
+    (page - 1) * 10,
+    page * 10
+  );
+}
+function queryWebsiteInfo() {
+  websiteLoading.value = true;
+  axios
+    .get("http://10.0.0.236:8000/api/assets/overview/web")
+    .then((res) => {
+      websiteData.value = res.data.rows.map((item) => {
+        const ports = item["端口"];
+        item["端口"] = Array.isArray(ports)
+          ? [...new Set(ports.map((port) => port.port))].join(",")
+          : ports;
+        return item;
+      });
+      websiteDataDisplay.value = res.data.rows.slice(0, 10);
+
+      const columns = [];
+      websiteDataDisplay.value.forEach((item) => {
+        columns.push(...Object.keys(item));
+      });
+      websiteDataColumns.value = [...new Set(columns)];
+
+      websiteNum.value = res.data.total;
+    })
+    .finally(() => {
+      websiteLoading.value = false;
+    });
+}
 
 const dockerImageNum = ref(0);
 const dockerImageLoading = ref(false);
+const dockerImageData = ref([]);
+const dockerImageDataDisplay = ref([]);
+const dockerImageDataColumns = ref([]);
+const dockerImageDataCurrentPage = ref(1);
+function dockerImageDataNextPage(page) {
+  dockerImageDataCurrentPage.value = page;
+  dockerImageDataDisplay.value = dockerImageData.value.slice(
+    (page - 1) * 10,
+    page * 10
+  );
+}
+function queryDockerImageInfo() {
+  dockerImageLoading.value = true;
+  axios
+    .get("http://10.0.0.236:8000/api/assets/overview/docker/image")
+    .then((res) => {
+      dockerImageData.value = res.data.rows;
+      dockerImageDataDisplay.value = res.data.rows.slice(0, 10);
+
+      const columns = [];
+      dockerImageDataDisplay.value.forEach((item) => {
+        columns.push(...Object.keys(item));
+      });
+      dockerImageDataColumns.value = [...new Set(columns)];
+
+      dockerImageNum.value = res.data.total;
+    })
+    .finally(() => {
+      dockerImageLoading.value = false;
+    });
+}
 
 const dockerContainerNum = ref(0);
 const dockerContainerLoading = ref(false);
+const dockerContainerData = ref([]);
+const dockerContainerDataDisplay = ref([]);
+const dockerContainerDataColumns = ref([]);
+const dockerContainerDataCurrentPage = ref(1);
+function dockerContainerDataNextPage(page) {
+  dockerContainerDataCurrentPage.value = page;
+  dockerContainerDataDisplay.value = dockerContainerData.value.slice(
+    (page - 1) * 10,
+    page * 10
+  );
+}
+function queryDockerContainerInfo() {
+  dockerContainerLoading.value = true;
+  axios
+    .get("http://10.0.0.236:8000/api/assets/overview/docker/container")
+    .then((res) => {
+      dockerContainerData.value = res.data.rows;
+      dockerContainerDataDisplay.value = res.data.rows.slice(0, 10);
+
+      const columns = [];
+      dockerContainerDataDisplay.value.forEach((item) => {
+        columns.push(...Object.keys(item));
+      });
+      dockerContainerDataColumns.value = [...new Set(columns)];
+
+      dockerContainerNum.value = res.data.total;
+    })
+    .finally(() => {
+      dockerContainerLoading.value = false;
+    });
+}
 
 const dockerNetworkNum = ref(0);
 const dockerNetworkLoading = ref(false);
+const dockerNetworkData = ref([]);
+const dockerNetworkDataDisplay = ref([]);
+const dockerNetworkDataColumns = ref([]);
+const dockerNetworkDataCurrentPage = ref(1);
+function dockerNetworkDataNextPage(page) {
+  dockerNetworkDataCurrentPage.value = page;
+  dockerNetworkDataDisplay.value = dockerNetworkData.value.slice(
+    (page - 1) * 10,
+    page * 10
+  );
+}
+function queryDockerNetworkInfo() {
+  dockerNetworkLoading.value = true;
+  axios
+    .get("http://10.0.0.236:8000/api/assets/overview/docker/network")
+    .then((res) => {
+      dockerNetworkData.value = res.data.rows;
+      dockerNetworkDataDisplay.value = res.data.rows.slice(0, 10);
+
+      const columns = [];
+      dockerNetworkDataDisplay.value.forEach((item) => {
+        columns.push(...Object.keys(item));
+      });
+      dockerNetworkDataColumns.value = [...new Set(columns)];
+
+      dockerNetworkNum.value = res.data.total;
+    })
+    .finally(() => {
+      dockerNetworkLoading.value = false;
+    });
+}
 
 const currentDisplay = ref("host");
 </script>
@@ -313,7 +475,7 @@ const currentDisplay = ref("host");
           v-for="(column, columnIdx) of hostDataColumns"
           :prop="column"
           :label="column"
-          :key="'host-column-' + columnIdx"
+          :key="`host-column-${columnIdx}`"
         />
       </el-table>
       <el-pagination
@@ -334,7 +496,7 @@ const currentDisplay = ref("host");
           v-for="(column, columnIdx) of processDataColumns"
           :prop="column"
           :label="column"
-          :key="'process-column-' + columnIdx"
+          :key="`process-column-${columnIdx}`"
         />
       </el-table>
       <el-pagination
@@ -355,7 +517,7 @@ const currentDisplay = ref("host");
           v-for="(column, columnIdx) of portDataColumns"
           :prop="column"
           :label="column"
-          :key="'port-column-' + columnIdx"
+          :key="`port-column-${columnIdx}`"
         />
       </el-table>
       <el-pagination
@@ -376,13 +538,118 @@ const currentDisplay = ref("host");
           v-for="(column, columnIdx) of appDataColumns"
           :prop="column"
           :label="column"
-          :key="'app-column-' + columnIdx"
+          :key="`app-column-${columnIdx}`"
         />
       </el-table>
       <el-pagination
         :total="appNum"
         :current-page="appDataCurrentPage"
         @current-change="appDataNextPage"
+        layout="prev, pager, next"
+        style="margin: 0 auto"
+      />
+    </div>
+    <div
+      v-else-if="currentDisplay === 'user'"
+      v-loading.lock="userLoading"
+      class="card-body"
+    >
+      <el-table :data="userDataDisplay">
+        <el-table-column
+          v-for="(column, columnIdx) of userDataColumns"
+          :prop="column"
+          :label="column"
+          :key="`user-column-${columnIdx}`"
+        />
+      </el-table>
+      <el-pagination
+        :total="userNum"
+        :current-page="userDataCurrentPage"
+        @current-change="userDataNextPage"
+        layout="prev, pager, next"
+        style="margin: 0 auto"
+      />
+    </div>
+    <div
+      v-else-if="currentDisplay === 'website'"
+      v-loading.lock="websiteLoading"
+      class="card-body"
+    >
+      <el-table :data="websiteDataDisplay">
+        <el-table-column
+          v-for="(column, columnIdx) of websiteDataColumns"
+          :prop="column"
+          :label="column"
+          :key="`website-column-${columnIdx}`"
+        />
+      </el-table>
+      <el-pagination
+        :total="websiteNum"
+        :current-page="websiteDataCurrentPage"
+        @current-change="websiteDataNextPage"
+        layout="prev, pager, next"
+        style="margin: 0 auto"
+      />
+    </div>
+    <div
+      v-else-if="currentDisplay === 'dockerImage'"
+      v-loading.lock="dockerImageLoading"
+      class="card-body"
+    >
+      <el-table :data="dockerImageDataDisplay">
+        <el-table-column
+          v-for="(column, columnIdx) of dockerImageDataColumns"
+          :prop="column"
+          :label="column"
+          :key="`dockerImage-column-${columnIdx}`"
+        />
+      </el-table>
+      <el-pagination
+        :total="dockerImageNum"
+        :current-page="dockerImageDataCurrentPage"
+        @current-change="dockerImageDataNextPage"
+        layout="prev, pager, next"
+        style="margin: 0 auto"
+      />
+    </div>
+    <div
+      v-else-if="currentDisplay === 'dockerContainer'"
+      v-loading.lock="dockerContainerLoading"
+      class="card-body"
+    >
+      <el-table :data="dockerContainerDataDisplay">
+        <el-table-column
+          v-for="(column, columnIdx) of dockerContainerDataColumns"
+          :prop="column"
+          :label="column"
+          :key="`dockerContainer-column-${columnIdx}`"
+        />
+      </el-table>
+      <el-pagination
+        :total="dockerContainerNum"
+        :current-page="dockerContainerDataCurrentPage"
+        @current-change="dockerContainerDataNextPage"
+        layout="prev, pager, next"
+        style="margin: 0 auto"
+      />
+    </div>
+    <div
+      v-else-if="currentDisplay === 'dockerNetwork'"
+      v-loading.lock="dockerNetworkLoading"
+      class="card-body"
+    >
+      <el-table :data="dockerNetworkDataDisplay">
+        <el-table-column
+          v-for="(column, columnIdx) of dockerNetworkDataColumns"
+          :prop="column"
+          :label="column"
+          :key="`dockerNetwork-column-${columnIdx}`"
+        />
+      </el-table>
+      <el-pagination
+        :total="dockerNetworkNum"
+        :current-page="dockerNetworkDataCurrentPage"
+        @current-change="dockerNetworkDataNextPage"
         layout="prev, pager, next"
         style="margin: 0 auto"
       />
