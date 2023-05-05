@@ -29,13 +29,13 @@ dependencies:
 devDependencies:
   '@vitejs/plugin-vue':
     specifier: ^4.2.1
-    version: registry.npmmirror.com/@vitejs/plugin-vue@4.2.1(vite@4.3.3)(vue@3.2.47)
+    version: registry.npmmirror.com/@vitejs/plugin-vue@4.2.1(vite@4.3.5)(vue@3.2.47)
   prettier:
     specifier: ^2.8.8
     version: registry.npmmirror.com/prettier@2.8.8
   vite:
-    specifier: ^4.3.3
-    version: registry.npmmirror.com/vite@4.3.3
+    specifier: ^4.3.5
+    version: registry.npmmirror.com/vite@4.3.5
 
 packages:
 
@@ -329,10 +329,10 @@ packages:
     version: 7.19.1
     engines: {node: '>=6.9.0'}
 
-  registry.npmmirror.com/@babel/parser@7.21.5:
-    resolution: {integrity: sha512-J+IxH2IsxV4HbnTrSWgMAQj0UEo61hDA4Ny8h8PCX0MLXiibqHbqIOVneqdocemSBc22VpBKxt4J6FQzy9HarQ==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@babel/parser/-/parser-7.21.5.tgz}
+  registry.npmmirror.com/@babel/parser@7.21.8:
+    resolution: {integrity: sha512-6zavDGdzG3gUqAdWvlLFfk+36RilI+Pwyuuh7HItyeScCWP3k6i8vKclAQ0bM/0y/Kz/xiwvxhMv9MgTJP5gmA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@babel/parser/-/parser-7.21.8.tgz}
     name: '@babel/parser'
-    version: 7.21.5
+    version: 7.21.8
     engines: {node: '>=6.0.0'}
     hasBin: true
     dependencies:
@@ -688,7 +688,7 @@ packages:
     version: 0.0.16
     dev: false
 
-  registry.npmmirror.com/@vitejs/plugin-vue@4.2.1(vite@4.3.3)(vue@3.2.47):
+  registry.npmmirror.com/@vitejs/plugin-vue@4.2.1(vite@4.3.5)(vue@3.2.47):
     resolution: {integrity: sha512-ZTZjzo7bmxTRTkb8GSTwkPOYDIP7pwuyV+RV53c9PYUouwcbkIZIvWvNWlX2b1dYZqtOv7D6iUAnJLVNGcLrSw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@vitejs/plugin-vue/-/plugin-vue-4.2.1.tgz}
     id: registry.npmmirror.com/@vitejs/plugin-vue/4.2.1
     name: '@vitejs/plugin-vue'
@@ -698,7 +698,7 @@ packages:
       vite: ^4.0.0
       vue: ^3.2.25
     dependencies:
-      vite: registry.npmmirror.com/vite@4.3.3
+      vite: registry.npmmirror.com/vite@4.3.5
       vue: registry.npmmirror.com/vue@3.2.47
     dev: true
 
@@ -707,7 +707,7 @@ packages:
     name: '@vue/compiler-core'
     version: 3.2.47
     dependencies:
-      '@babel/parser': registry.npmmirror.com/@babel/parser@7.21.5
+      '@babel/parser': registry.npmmirror.com/@babel/parser@7.21.8
       '@vue/shared': registry.npmmirror.com/@vue/shared@3.2.47
       estree-walker: registry.npmmirror.com/estree-walker@2.0.2
       source-map: registry.npmmirror.com/source-map@0.6.1
@@ -725,7 +725,7 @@ packages:
     name: '@vue/compiler-sfc'
     version: 3.2.47
     dependencies:
-      '@babel/parser': registry.npmmirror.com/@babel/parser@7.21.5
+      '@babel/parser': registry.npmmirror.com/@babel/parser@7.21.8
       '@vue/compiler-core': registry.npmmirror.com/@vue/compiler-core@3.2.47
       '@vue/compiler-dom': registry.npmmirror.com/@vue/compiler-dom@3.2.47
       '@vue/compiler-ssr': registry.npmmirror.com/@vue/compiler-ssr@3.2.47
@@ -755,7 +755,7 @@ packages:
     name: '@vue/reactivity-transform'
     version: 3.2.47
     dependencies:
-      '@babel/parser': registry.npmmirror.com/@babel/parser@7.21.5
+      '@babel/parser': registry.npmmirror.com/@babel/parser@7.21.8
       '@vue/compiler-core': registry.npmmirror.com/@vue/compiler-core@3.2.47
       '@vue/shared': registry.npmmirror.com/@vue/shared@3.2.47
       estree-walker: registry.npmmirror.com/estree-walker@2.0.2
@@ -1329,10 +1329,10 @@ packages:
     version: 1.7.0
     dev: false
 
-  registry.npmmirror.com/rollup@3.21.1:
-    resolution: {integrity: sha512-GpUgqWCw56OSiBKf7lcAITstYiBV1/EKaKYPl9r8HgAxc6/qYAVw1PaHWnvHWFziRaf4HsVCDLq/IGtBi1K/Zw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/rollup/-/rollup-3.21.1.tgz}
+  registry.npmmirror.com/rollup@3.21.5:
+    resolution: {integrity: sha512-a4NTKS4u9PusbUJcfF4IMxuqjFzjm6ifj76P54a7cKnvVzJaG12BLVR+hgU2YDGHzyMMQNxLAZWuALsn8q2oQg==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/rollup/-/rollup-3.21.5.tgz}
     name: rollup
-    version: 3.21.1
+    version: 3.21.5
     engines: {node: '>=14.18.0', npm: '>=8.0.0'}
     hasBin: true
     optionalDependencies:
@@ -1389,10 +1389,10 @@ packages:
     version: 2.5.0
     dev: false
 
-  registry.npmmirror.com/vite@4.3.3:
-    resolution: {integrity: sha512-MwFlLBO4udZXd+VBcezo3u8mC77YQk+ik+fbc0GZWGgzfbPP+8Kf0fldhARqvSYmtIWoAJ5BXPClUbMTlqFxrA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/vite/-/vite-4.3.3.tgz}
+  registry.npmmirror.com/vite@4.3.5:
+    resolution: {integrity: sha512-0gEnL9wiRFxgz40o/i/eTBwm+NEbpUeTWhzKrZDSdKm6nplj+z4lKz8ANDgildxHm47Vg8EUia0aicKbawUVVA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/vite/-/vite-4.3.5.tgz}
     name: vite
-    version: 4.3.3
+    version: 4.3.5
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
     peerDependencies:
@@ -1418,7 +1418,7 @@ packages:
     dependencies:
       esbuild: registry.npmmirror.com/esbuild@0.17.18
       postcss: registry.npmmirror.com/postcss@8.4.23
-      rollup: registry.npmmirror.com/rollup@3.21.1
+      rollup: registry.npmmirror.com/rollup@3.21.5
     optionalDependencies:
       fsevents: registry.npmmirror.com/fsevents@2.3.2
     dev: true
