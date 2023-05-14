@@ -33,7 +33,7 @@ const openedMenuItems = ref(["/data", "/info", "/knowledge"]);
               <span>情报库</span>
             </template>
             <el-menu-item index="/info/assets">资产列表</el-menu-item>
-            <el-menu-item index="/info/vuls">漏洞扫描</el-menu-item>
+            <!-- <el-menu-item index="/info/vuls">漏洞扫描</el-menu-item> -->
             <!-- <el-menu-item index="/info/situation">系统态势</el-menu-item> -->
           </el-sub-menu>
           <!-- <el-sub-menu index="/knowledge">
