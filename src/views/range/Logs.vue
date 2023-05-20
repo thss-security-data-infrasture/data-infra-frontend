@@ -80,7 +80,7 @@ function onRouterChange() {
   });
 }
 
-function setRouterProps(query) {
+function setRouterProps(query, first = false) {
   if (
     query.hasOwnProperty("start") &&
     query.hasOwnProperty("end") &&
@@ -91,26 +91,19 @@ function setRouterProps(query) {
     logQueryIp.value = query.agents;
     logQuery();
   } else {
+    if (first) {
+      return;
+    }
     ElMessage({
       message: "路由参数有误，请检查路由参数是否正确",
       type: "warning",
       grouping: true,
       showClose: true,
     });
-    return;
   }
 }
 
-onBeforeRouteUpdate((curRoute, lastRoute) => {
-  if (curRoute.fullPath === lastRoute.fullPath) {
-    ElMessage({
-      message: "查询参数无变化",
-      type: "info",
-      grouping: true,
-      showClose: true,
-    });
-    return;
-  }
+onBeforeRouteUpdate((curRoute) => {
   setRouterProps(curRoute.query);
 });
 
@@ -129,7 +122,7 @@ function logQuery() {
 }
 
 onMounted(() => {
-  setRouterProps(route.query);
+  setRouterProps(route.query, true);
 });
 
 const trafficDataLoading = ref(false);
