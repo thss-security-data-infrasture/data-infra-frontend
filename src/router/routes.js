@@ -43,6 +43,10 @@ export default [
     ],
   },
   {
+    path: "/range/logs",
+    component: () => import("~/views/range/Logs.vue"),
+  },
+  {
     path: "/:notFound(.*)",
     component: () => import("~/views/NotFound.vue"),
   },

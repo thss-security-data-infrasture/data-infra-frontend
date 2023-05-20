@@ -478,8 +478,10 @@ function auditDataNextPage(page) {
             <el-table :data="auditDataDisplay" height="520px">
               <el-table-column type="expand">
                 <template #default="props">
-                  <p>proctitle:</p>
-                  <pre>{{ props.row.title }}</pre>
+                  <div style="padding: 0 20px">
+                    <p>proctitle:</p>
+                    <pre>{{ props.row.title }}</pre>
+                  </div>
                 </template>
               </el-table-column>
               <el-table-column prop="host" label="宿主机" min-width="100px" />
