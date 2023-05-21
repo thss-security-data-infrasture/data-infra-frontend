@@ -8,8 +8,8 @@ import { ElMessage } from "element-plus";
 const router = useRouter();
 const route = useRoute();
 
-const start = new Date("2023-04-26 00:00:00");
-const end = new Date("2023-04-29 00:00:00");
+const start = new Date("");
+const end = new Date("");
 const logQueryTimeRange = ref([start, end]);
 const logQueryTimeRangeShortcuts = [
   {
@@ -67,42 +67,31 @@ const logQueryTimeRangeShortcuts = [
     },
   },
 ];
-const logQueryIp = ref("10.0.0.193");
+const logQueryAgents = ref([]);
+const logQueryIp = ref("");
 
-function onRouterChange() {
-  router.push({
-    path: "/range/logs",
-    query: {
-      start: logQueryTimeRange.value[0].toISOString(),
-      end: logQueryTimeRange.value[1].toISOString(),
-      agents: logQueryIp.value,
-    },
-  });
-}
-
-function setRouterProps(query, first = false) {
+function setRouterProps(query) {
   if (
     query.hasOwnProperty("start") &&
     query.hasOwnProperty("end") &&
-    query.hasOwnProperty("agents")
+    route.query.hasOwnProperty("ips") &&
+    Object.keys(query).length > 3 // 检查是否有 agent 信息
   ) {
     logQueryTimeRange.value[0] = new Date(query.start);
     logQueryTimeRange.value[1] = new Date(query.end);
-    logQueryIp.value = query.agents;
-    logQuery();
+    logQueryIp.value = query.ips ?? "";
+    logQueryAgents.value = Object.keys(query).filter(
+      (k) => k != "start" && k != "end"
+    );
   } else {
-    if (first) {
-      return;
-    }
     ElMessage({
-      message: "路由参数有误，请检查路由参数是否正确",
+      message: "请检查 URL 参数是否正确",
       type: "warning",
       grouping: true,
       showClose: true,
     });
   }
 }
-
 onBeforeRouteUpdate((curRoute) => {
   setRouterProps(curRoute.query);
 });
@@ -117,12 +106,37 @@ function logQuery() {
     });
     return;
   }
-  const queryReqs = [trafficLogQuery(1), auditLogQuery(1)];
-  Promise.allSettled(queryReqs);
+  if (
+    route.query.hasOwnProperty("start") &&
+    route.query.hasOwnProperty("end") &&
+    route.query.hasOwnProperty("ips") &&
+    Object.keys(route.query).length > 3 // 检查是否有 agent 信息
+  ) {
+    // 更新路由
+    router.push({
+      path: "/range/logs",
+      query: {
+        ...route.query,
+        start: logQueryTimeRange.value[0].toISOString(),
+        end: logQueryTimeRange.value[1].toISOString(),
+        ips: logQueryIp.value,
+      },
+    });
+    const queryReqs = [trafficLogQuery(1), auditLogQuery(1)];
+    Promise.allSettled(queryReqs);
+  } else {
+    ElMessage({
+      message: "请检查 URL 参数是否正确",
+      type: "warning",
+      grouping: true,
+      showClose: true,
+    });
+  }
 }
 
 onMounted(() => {
-  setRouterProps(route.query, true);
+  setRouterProps(route.query);
+  logQuery();
 });
 
 const trafficDataLoading = ref(false);
@@ -136,7 +150,7 @@ function trafficLogQuery(page) {
     .post("http://10.0.0.236:8000/api/fused_info/traffic", {
       start: logQueryTimeRange.value[0].toISOString(),
       end: logQueryTimeRange.value[1].toISOString(),
-      ipList: logQueryIp.value.split(","),
+      ipList: logQueryIp.value.length > 0 ? logQueryIp.value.split(",") : [],
       page: page - 1,
       size: 10, // 10 items per page
       demo: false,
@@ -165,7 +179,7 @@ function auditLogQuery() {
     .post("http://10.0.0.236:8000/api/fused_info/audit", {
       start: logQueryTimeRange.value[0].toISOString(),
       end: logQueryTimeRange.value[1].toISOString(),
-      ipList: logQueryIp.value.split(","),
+      ipList: logQueryIp.value.length > 0 ? logQueryIp.value.split(",") : [],
       adv_param: {
         syscall_whitelist: ["execve", "fork", "vfork", "clone", "clone3"],
       },
@@ -216,7 +230,7 @@ function auditDataNextPage(page) {
           >
             <template #append>
               <el-button>
-                <el-icon @click="onRouterChange">
+                <el-icon @click="logQuery">
                   <Search />
                 </el-icon>
               </el-button>

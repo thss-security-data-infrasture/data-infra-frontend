@@ -120,7 +120,7 @@ function trafficLogQuery(page) {
     .post("http://10.0.0.236:8000/api/fused_info/traffic", {
       start: logQueryTimeRange.value[0].toISOString(),
       end: logQueryTimeRange.value[1].toISOString(),
-      ipList: logQueryIp.value.split(","),
+      ipList: logQueryIp.value.length > 0 ? logQueryIp.value.split(",") : [],
       page: page - 1,
       size: 10, // 10 items per page
       demo: false,
@@ -149,7 +149,7 @@ function alertLogQuery() {
     .post("http://10.0.0.236:8000/api/fused_info/alert", {
       start: logQueryTimeRange.value[0].toISOString(),
       end: logQueryTimeRange.value[1].toISOString(),
-      ipList: logQueryIp.value.split(","),
+      ipList: logQueryIp.value.length > 0 ? logQueryIp.value.split(",") : [],
       page: 0,
       size: 1000, // load all items by default because of backend's limitation
       demo: false,
@@ -210,7 +210,7 @@ function getActiveAppsData(appNames) {
         .post("http://10.0.0.236:8000/api/fused_info/app", {
           start: logQueryTimeRange.value[0].toISOString(),
           end: logQueryTimeRange.value[1].toISOString(),
-          ipList: logQueryIp.value.split(","),
+          ipList: logQueryIp.value.length > 0 ? logQueryIp.value.split(",") : [],
           appList: appsToQuery,
           page: 0,
           size: 1000, // load all items by default because of backend's limitation
@@ -262,7 +262,7 @@ function auditLogQuery() {
     .post("http://10.0.0.236:8000/api/fused_info/audit", {
       start: logQueryTimeRange.value[0].toISOString(),
       end: logQueryTimeRange.value[1].toISOString(),
-      ipList: logQueryIp.value.split(","),
+      ipList: logQueryIp.value.length > 0 ? logQueryIp.value.split(",") : [],
       adv_param: {
         syscall_whitelist: ["execve", "fork", "vfork", "clone", "clone3"],
       },
