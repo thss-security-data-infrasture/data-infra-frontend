@@ -5,6 +5,10 @@ import axios from "axios";
 import { nextTick, onMounted, ref } from "vue";
 import { ElMessage } from "element-plus";
 
+let overviewGraph = null;
+let overviewGraphContainer = null;
+let overviewGraphHighlightedEdge = null;
+
 function getTooltip(model, is_center = false) {
   // 边
   if (model.hasOwnProperty("source") && model.hasOwnProperty("target")) {
@@ -96,7 +100,11 @@ function createOverviewGragh(containerId) {
   // 弹出详情
   graph.on("edge:click", (evt) => {
     const { item } = evt;
-    console.log(item.getModel());
+    overviewGraphHighlightedEdge = item.getModel();
+    // query
+    console.log(overviewGraphHighlightedEdge);
+    showTrafficDialog.value = true;
+    trafficLogQuery(1);
   });
 
   // 重新布局
@@ -125,9 +133,6 @@ function createOverviewGragh(containerId) {
 
   return graph;
 }
-
-let overviewGraph = null;
-let overviewGraphContainer = null;
 
 function updateOverviewGraph(start, end, ip) {
   overviewGraphLoading.value = true;
@@ -277,10 +282,44 @@ onMounted(() => {
     overviewGraphIp.value
   );
 });
+
+const showTrafficDialog = ref(false);
+function closeTrafficDialog() {
+  showTrafficDialog.value = false;
+}
+
+const trafficDataLoading = ref(false);
+const trafficData = ref([]);
+const trafficDataTotal = ref(0);
+const trafficCurrentPage = ref(1);
+function trafficLogQuery(page) {
+  trafficCurrentPage.value = page;
+  trafficDataLoading.value = true;
+  axios
+    .post("http://10.0.0.236:8001/api/fused_info/traffic", {
+      start: overviewGraphTimeRange.value[0].toISOString(),
+      end: overviewGraphTimeRange.value[1].toISOString(),
+      src: overviewGraphHighlightedEdge.source,
+      dst: overviewGraphHighlightedEdge.target,
+      is_port: false,
+      page: page - 1,
+      size: 10, // 10 items per page
+    })
+    .then((res) => {
+      console.log(res.data.data);
+      trafficData.value = res.data.data.map((item) => ({
+        ...item,
+        timestamp: item.timestamp.split(".")[0].replaceAll("T", " "),
+      }));
+    })
+    .finally(() => {
+      trafficDataLoading.value = false;
+    });
+}
 </script>
 
 <template>
-  <div id="log-fusion" style="height: 100%">
+  <div id="hw-2023" style="height: 100%">
     <el-container v-loading.lock="overviewGraphLoading" style="height: 100%">
       <el-header>
         <el-row>
@@ -322,5 +361,50 @@ onMounted(() => {
         </el-row>
       </el-main>
     </el-container>
+    <el-dialog
+      v-model="showTrafficDialog"
+      :before-close="closeTrafficDialog"
+      title="流量信息"
+      fullscreen
+    >
+      <el-table :data="trafficData">
+        <el-table-column type="expand">
+          <template #default="props">
+            <div style="padding: 0 20px">
+              <p>content:</p>
+              <pre>{{ props.row.content }}</pre>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="timestamp" label="timestamp" min-width="200px" />
+        <el-table-column prop="brief" label="brief" min-width="300px" />
+        <el-table-column prop="uri" label="uri" min-width="350px" />
+        <el-table-column prop="protocols" label="protocols" min-width="250px" />
+        <el-table-column
+          prop="content_short"
+          label="content_short"
+          min-width="350px"
+        />
+        <el-table-column
+          prop="analyze_res"
+          label="analyze_res"
+          min-width="120px"
+        />
+      </el-table>
+      <el-pagination
+        :total="trafficDataTotal"
+        :current-page="trafficCurrentPage"
+        @current-change="trafficLogQuery"
+        layout="prev, pager, next"
+        style="margin: 0 auto"
+      />
+    </el-dialog>
   </div>
 </template>
+
+<style>
+#hw-2023 .el-dialog__body {
+  display: flex;
+  flex-direction: column;
+}
+</style>
