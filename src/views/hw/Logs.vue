@@ -365,7 +365,7 @@ function trafficLogQuery(page) {
       v-model="showTrafficDialog"
       :before-close="closeTrafficDialog"
       title="流量信息"
-      fullscreen
+      width="80%"
     >
       <el-table :data="trafficData">
         <el-table-column type="expand">
