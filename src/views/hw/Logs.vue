@@ -116,7 +116,6 @@ function createOverviewGragh(containerId) {
     const { item } = evt;
     overviewGraphHighlightedEdge = item.getModel();
     // query
-    console.log(overviewGraphHighlightedEdge);
     showTrafficDialog.value = true;
     trafficLogQuery(1);
   });
@@ -323,7 +322,6 @@ function trafficLogQuery(page) {
       size: 10, // 10 items per page
     })
     .then((res) => {
-      console.log(res.data.data);
       trafficData.value = res.data.data.map((item) => ({
         ...item,
         timestamp: item.timestamp.split(".")[0].replaceAll("T", " "),
