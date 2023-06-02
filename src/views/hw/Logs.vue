@@ -304,6 +304,8 @@ function closeTrafficDialog() {
   showTrafficDialog.value = false;
 }
 
+const trafficDataCache = new Map();
+
 const trafficDataLoading = ref(false);
 const trafficData = ref([]);
 const trafficDataTotal = ref(0);
@@ -311,6 +313,12 @@ const trafficCurrentPage = ref(1);
 function trafficLogQuery(page) {
   trafficCurrentPage.value = page;
   trafficDataLoading.value = true;
+  // load from cache
+  if (trafficDataCache.has(page)) {
+    trafficDataLoading.value = false;
+    trafficData.value = trafficDataCache.get(page);
+    return;
+  }
   axios
     .post("http://10.0.0.236:8001/api/fused_info/traffic", {
       start: overviewGraphTimeRange.value[0].toISOString(),
@@ -326,6 +334,9 @@ function trafficLogQuery(page) {
         ...item,
         timestamp: item.timestamp.split(".")[0].replaceAll("T", " "),
       }));
+      trafficDataTotal.value = res.data.total;
+      // save to cache
+      trafficDataCache.set(page, trafficData.value);
     })
     .finally(() => {
       trafficDataLoading.value = false;
