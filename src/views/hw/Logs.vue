@@ -5,6 +5,16 @@ import axios from "axios";
 import { nextTick, onMounted, ref } from "vue";
 import { ElMessage } from "element-plus";
 
+function nodeTypeToShape(type) {
+  if (type === "host") {
+    return "diamond";
+  } else if (type === "app") {
+    return "rect";
+  } else {
+    return "circle";
+  }
+}
+
 let overviewGraph = null;
 let overviewGraphContainer = null;
 let overviewGraphHighlightedEdge = null;
@@ -78,6 +88,10 @@ function createOverviewGragh(containerId) {
       style: {
         stroke: "#C0C4CC",
         lineWidth: 3,
+        endArrow: {
+          path: G6.Arrow.triangle(3, 5, 15),
+          d: 15,
+        },
       },
     },
     maxZoom: 1.5, // 最大缩放比例
@@ -164,6 +178,7 @@ function updateOverviewGraph(start, end, ip) {
           const newNode = {
             ...node,
             node_type: node.type,
+            type: nodeTypeToShape(node.type),
           };
           if (node.hasOwnProperty("alerts") && node.alerts > 0) {
             newNode["style"] = {
@@ -177,6 +192,8 @@ function updateOverviewGraph(start, end, ip) {
           label: edge.access,
         })),
       };
+      // multiple edges support
+      G6.Util.processParallelEdges(graphData.edges);
       nextTick(() => {
         if (overviewGraph === null) {
           overviewGraph = createOverviewGragh("overview-graph");
@@ -367,7 +384,7 @@ function trafficLogQuery(page) {
       title="流量信息"
       width="80%"
     >
-      <el-table :data="trafficData">
+      <el-table :data="trafficData" v-loading.lock="trafficDataLoading">
         <el-table-column type="expand">
           <template #default="props">
             <div style="padding: 0 20px">
