@@ -302,6 +302,8 @@ onMounted(() => {
 const showTrafficDialog = ref(false);
 function closeTrafficDialog() {
   showTrafficDialog.value = false;
+  // clear cache
+  trafficDataCache.clear();
 }
 
 const trafficDataCache = new Map();
@@ -418,6 +420,7 @@ function trafficLogQuery(page) {
         />
       </el-table>
       <el-pagination
+        v-if="trafficDataTotal > 0"
         :total="trafficDataTotal"
         :current-page="trafficCurrentPage"
         @current-change="trafficLogQuery"
