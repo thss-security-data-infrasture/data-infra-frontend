@@ -67,7 +67,7 @@ function createOverviewGragh(containerId) {
       default: ["drag-canvas", "zoom-canvas", "drag-node"],
     },
     layout: {
-      type: "force",
+      type: "gForce",
       preventOverlap: true,
       linkDistance: (d) => {
         return 100 + d.source.size + d.target.size;
@@ -329,7 +329,7 @@ function trafficLogQuery(page) {
       dst: overviewGraphHighlightedEdge.target,
       is_port: false,
       page: page - 1,
-      size: 10, // 10 items per page
+      size: 1000, // 10 items per page
     })
     .then((res) => {
       trafficData.value = res.data.data.map((item) => ({
