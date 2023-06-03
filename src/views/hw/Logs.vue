@@ -405,18 +405,17 @@ function trafficLogQuery(page) {
           </template>
         </el-table-column>
         <el-table-column prop="timestamp" label="timestamp" min-width="200px" />
+        <el-table-column
+          prop="analyze_res"
+          label="analyze_res"
+          min-width="200px"
+        />
         <el-table-column prop="brief" label="brief" min-width="300px" />
         <el-table-column prop="uri" label="uri" min-width="350px" />
-        <el-table-column prop="protocols" label="protocols" min-width="250px" />
         <el-table-column
           prop="content_short"
           label="content_short"
           min-width="350px"
-        />
-        <el-table-column
-          prop="analyze_res"
-          label="analyze_res"
-          min-width="120px"
         />
       </el-table>
       <el-pagination
