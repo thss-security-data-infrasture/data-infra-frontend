@@ -67,29 +67,39 @@ const logQueryTimeRangeShortcuts = [
     },
   },
 ];
-const logQueryAgents = ref([]);
+const logQueryAgents = ref(null);
 const logQueryIp = ref("");
 
 function setRouterProps(query) {
   if (
     query.hasOwnProperty("start") &&
-    query.hasOwnProperty("end") &&
-    route.query.hasOwnProperty("ips") &&
-    Object.keys(query).length > 3 // 检查是否有 agent 信息
+    Object.keys(query).length > 1 // 检查是否有 agent 信息
   ) {
     logQueryTimeRange.value[0] = new Date(query.start);
-    logQueryTimeRange.value[1] = new Date(query.end);
-    logQueryIp.value = query.ips ?? "";
-    logQueryAgents.value = Object.keys(query).filter(
-      (k) => k != "start" && k != "end"
+    logQueryTimeRange.value[1] = new Date();
+    logQueryAgents.value = Object.fromEntries(
+      Object.entries(query).filter(([key]) => key !== "start")
     );
+    // 每个 agent 的第一个作为默认值
+    logQueryIp.value = Object.entries(logQueryAgents.value)
+      .map(([_, value]) => value[0])
+      .join(",");
   } else {
-    ElMessage({
-      message: "请检查 URL 参数是否正确",
-      type: "warning",
-      grouping: true,
-      showClose: true,
-    });
+    if (query.hasOwnProperty("start")) {
+      ElMessage({
+        message: "缺少开始时间",
+        type: "warning",
+        grouping: true,
+        showClose: true,
+      });
+    } else {
+      ElMessage({
+        message: "缺少 agent 信息",
+        type: "warning",
+        grouping: true,
+        showClose: true,
+      });
+    }
   }
 }
 onBeforeRouteUpdate((curRoute) => {
@@ -108,9 +118,7 @@ function logQuery() {
   }
   if (
     route.query.hasOwnProperty("start") &&
-    route.query.hasOwnProperty("end") &&
-    route.query.hasOwnProperty("ips") &&
-    Object.keys(route.query).length > 3 // 检查是否有 agent 信息
+    Object.keys(route.query).length > 1 // 检查是否有 agent 信息
   ) {
     // 更新路由
     router.push({
@@ -118,19 +126,26 @@ function logQuery() {
       query: {
         ...route.query,
         start: logQueryTimeRange.value[0].toISOString(),
-        end: logQueryTimeRange.value[1].toISOString(),
-        ips: logQueryIp.value,
       },
     });
     const queryReqs = [trafficLogQuery(1), auditLogQuery(1)];
     Promise.allSettled(queryReqs);
   } else {
-    ElMessage({
-      message: "请检查 URL 参数是否正确",
-      type: "warning",
-      grouping: true,
-      showClose: true,
-    });
+    if (query.hasOwnProperty("start")) {
+      ElMessage({
+        message: "缺少开始时间",
+        type: "warning",
+        grouping: true,
+        showClose: true,
+      });
+    } else {
+      ElMessage({
+        message: "缺少 agent 信息",
+        type: "warning",
+        grouping: true,
+        showClose: true,
+      });
+    }
   }
 }
 
@@ -151,6 +166,7 @@ function trafficLogQuery(page) {
       start: logQueryTimeRange.value[0].toISOString(),
       end: logQueryTimeRange.value[1].toISOString(),
       ipList: logQueryIp.value.length > 0 ? logQueryIp.value.split(",") : [],
+      ipMap: logQueryAgents.value,
       page: page - 1,
       size: 10, // 10 items per page
       demo: false,
@@ -180,6 +196,7 @@ function auditLogQuery() {
       start: logQueryTimeRange.value[0].toISOString(),
       end: logQueryTimeRange.value[1].toISOString(),
       ipList: logQueryIp.value.length > 0 ? logQueryIp.value.split(",") : [],
+      ipMap: logQueryAgents.value,
       adv_param: {
         syscall_whitelist: ["execve", "fork", "vfork", "clone", "clone3"],
       },
