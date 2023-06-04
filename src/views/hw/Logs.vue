@@ -421,6 +421,7 @@ function trafficLogQuery(page) {
       <el-pagination
         v-if="trafficDataTotal > 0"
         :total="trafficDataTotal"
+        :page-size="1000"
         :current-page="trafficCurrentPage"
         @current-change="trafficLogQuery"
         layout="prev, pager, next"
