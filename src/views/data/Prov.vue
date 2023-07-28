@@ -947,7 +947,7 @@ function advancedSearchAuditGraph() {
     <el-container v-loading.lock="overviewGraphLoading" style="height: 100%">
       <el-header>
         <el-row>
-          <el-col :span="16">
+          <el-col :span="16" style="display: flex; min-width: 800px;">
             <el-input
               v-model="overviewGraphIp"
               placeholder="请输入 ip，多个 ip 请用 , 分隔（可以为空）"
@@ -961,6 +961,7 @@ function advancedSearchAuditGraph() {
                   range-separator="-"
                   start-placeholder="开始时间"
                   end-placeholder="结束时间"
+                  style="min-width: 460px;border-radius: 20px;margin-right:12px"
                 />
               </template>
               <template #append>
@@ -977,20 +978,20 @@ function advancedSearchAuditGraph() {
       <el-main style="height: 100%; overflow-y: hidden">
         <el-row style="height: 100%">
           <el-col :span="overviewGraphColSpan">
-            <div id="overview-graph" style="width: 100%; height: 100%" />
+            <div id="overview-graph" style="width: 100%; height: 100%;background-color: #F7F7F7;border-radius: 36px" />
           </el-col>
           <el-col :span="detailGraphColSpan">
             <el-card
-              style="height: 100%"
+              style="height: 100%;border-radius: 36px;"
               :body-style="{
-                height: '100%',
+                height: '80%',
                 padding: 0,
               }"
             >
               <template #header>
                 <div class="card-header">
                   <div>
-                    <el-select v-model="detailGraphSelected" size="large">
+                    <el-select v-model="detailGraphSelected" size="large" class="card-header-one-select">
                       <el-option
                         v-for="option in detailGraphOptions"
                         :key="option.value"
@@ -1007,6 +1008,7 @@ function advancedSearchAuditGraph() {
                         @click="openAuditGraphDialog"
                         :disabled="!isDetailGraphSelected"
                         size="large"
+                        style="border-radius: 17px"
                       >
                         <el-icon>
                           <FullScreen />
@@ -1014,8 +1016,8 @@ function advancedSearchAuditGraph() {
                       </el-button>
                     </el-tooltip>
                   </div>
-                  <el-button @click="closeDetailGraph" size="large">
-                    <el-icon color="#F56C6C">
+                  <el-button @click="closeDetailGraph" size="large" style="background: #E75A5A;border-radius: 29px;width: 40px;">
+                    <el-icon color="#FFFFFF">
                       <CloseBold />
                     </el-icon>
                   </el-button>
@@ -1127,6 +1129,8 @@ function advancedSearchAuditGraph() {
 <style>
 #prov-graph .el-input-group__prepend {
   padding: 0;
+  box-shadow: none;
+  background-color: white;
 }
 
 #prov-graph .el-dialog__body {
@@ -1138,4 +1142,101 @@ function advancedSearchAuditGraph() {
   justify-content: space-between;
   align-items: center;
 }
+</style>
+
+<style lang="scss" scoped>
+  $theme-color: #6B78D3;
+
+  #log-fusion .el-input-group__prepend {
+    padding: 0;
+  }
+
+  :deep .el-select {
+    margin: 0 12px;
+    .el-input__wrapper{
+      border-radius: 20px;
+    }
+  }
+
+  :deep .el-input-group {
+    align-items: center;
+    .el-input__wrapper{
+      border-radius: 20px 0 0 20px;
+    }
+  }
+
+  :deep .el-input__wrapper{
+    box-shadow: rgba(107, 120, 211, 1) 0px 0px 0px 1px inset;
+    height: 40px;
+  }
+
+  :deep .el-input__inner,
+  :deep .el-date-editor .el-range-input {
+    color: #242145;
+  }
+
+  :deep .el-date-editor .el-range-input {
+    height: 40px;
+    line-height: 40px;
+  }
+
+  :deep .el-select .el-select-tags-wrapper.has-prefix {
+    margin-left: 8px;
+  }
+
+  :deep .el-input-group__append {
+    background: $theme-color;
+    border-radius: 0 20px 20px 0;
+    height: 44px;
+  }
+
+  :deep .el-icon {
+    font-size: 18px;
+  }
+
+  :deep .el-input-group__append.el-input-group .el-input__wrapper {
+    border-radius: 20px 0 0 20px !important;
+  }
+
+  :deep .el-input-group__append {
+    .el-icon {
+      color: #fff;
+      font-size: 24px;
+    }
+
+    .el-button {
+      padding: 0;
+      margin: 0 -5px;
+    }
+  }
+
+  :deep .el-card__header{
+    background: #E5EBFB ;
+  }
+
+  :deep .card-header-one-select .el-input__wrapper {
+    box-shadow:  none;
+    height: 40px;
+  }
+
+</style>
+<style lang="scss">
+  .log-type-sel {
+    border-radius: 30px;
+    .el-select-dropdown__list {
+      margin: 20px 0 !important;
+    }
+    .el-select-dropdown__item {
+      color: #6B78D3 !important;
+      font-size: 14px;
+      height: 38px;
+      line-height: 38px;
+    }
+    .el-select-dropdown__item.selected {
+      background: #F7F7FE !important;
+      &::after{
+        --el-color-primary: #6B78D3;
+      }
+    }
+  }
 </style>
