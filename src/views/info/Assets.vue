@@ -578,7 +578,7 @@ $theme-color: #6B78D3;
   --el-scrollbar-bg-color: #6B78D3;
   --el-scrollbar-opacity: 1;
 }
-.el-pagination {
+:deep .el-pagination {
   margin: 22px auto;
 
   button {
