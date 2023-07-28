@@ -461,7 +461,7 @@ $theme-color: #6B78D3;
 #log-fusion .el-input-group__prepend {
   padding: 0;
 }
-
+// :root { --el-border-radius-base: '20px';}
 :deep .el-select {
   margin: 0 12px;
   .el-input__wrapper{
@@ -478,7 +478,6 @@ $theme-color: #6B78D3;
 
 :deep .el-input__wrapper{
   box-shadow: rgba(107, 120, 211, 1) 0px 0px 0px 1px inset;
-  
   height: 40px;
 }
 
@@ -508,7 +507,6 @@ $theme-color: #6B78D3;
 
 :deep .el-input-group__append.el-input-group .el-input__wrapper {
     border-radius: 20px 0 0 20px !important;
-
 }
 
 :deep .el-input-group__append {
@@ -586,27 +584,15 @@ li.is-active {
   color: $theme-color;
 }
 }
+// :deep .el-popper.is-pure{
+//   border-radius: 30px;
+// }
 
+.el-select-dropdown{
 
-.log-type-sel .el-popper {
-  border-radius: 20px;
-
+  --el-border-radius-base: 20px;padding: 10px 0;
 }
 
-.log-type-sel .el-select-dropdown__list {
-  margin: 20px 0 !important;
-}
-
-.log-type-sel .el-select-dropdown__item {
-  color: $theme-color !important;
-  font-size: 14px;
-  height: 38px;
-  line-height: 38px;
-}
-
-.el-select-dropdown__item.selected {
-  background: #F7F7FE !important;
-}
 :deep .el-collapse{
   border: none;
   background: #F8F8F8;
@@ -617,6 +603,26 @@ li.is-active {
     padding: 0 36px;
     height: 44px;
     line-height: 44px;
+  }
+}
+</style>
+<style lang="scss">
+.log-type-sel {
+  border-radius: 30px;
+  .el-select-dropdown__list {
+    margin: 20px 0 !important;
+  }
+  .el-select-dropdown__item {
+    color: #6B78D3 !important;
+    font-size: 14px;
+    height: 38px;
+    line-height: 38px;
+  }
+  .el-select-dropdown__item.selected {
+    background: #F7F7FE !important;
+    &::after{
+      --el-color-primary: #6B78D3;
+    }
   }
 }
 </style>

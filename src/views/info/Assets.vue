@@ -47,7 +47,32 @@ function queryHostInfo() {
       hostLoading.value = false;
     });
 }
-
+function setCellStyle({ row, column, rowIndex, columnIndex }) {
+  const styleObject = {
+    'background': '#E5EBFB !important',
+    'color': '#6B78D3',
+    'font-size': '16px',
+    'borderRadius': '',
+    'padding': '10px 20px'
+  }
+  
+  if (columnIndex === 0) {
+    styleObject.borderRadius = '23px 0 0 23px'
+  }
+  if (column.label === "内存" || column.label === "进程数量" || column.label === "端口数量" || column.label === "主机数"|| column.label === "权限" || column.label === "创建时间") {
+    styleObject.borderRadius = '0 23px 23px 0'
+  }
+  return styleObject
+}
+function setBodyCellStyle({ row, column, rowIndex, columnIndex }) {
+  const styleObject = {
+    'background': '#F7F7F7 !important',
+    'color': '#242145',
+    'fontSize': '14px',
+    'padding': '10px 20px'
+  }
+  return styleObject
+}
 const processNum = ref(0);
 const processLoading = ref(false);
 const processData = ref([]);
@@ -321,349 +346,275 @@ const currentDisplay = ref("host");
 </script>
 
 <template>
-  <el-card style="width: 80%; margin: 0 auto">
+  <el-card>
     <template #header>
-      <el-row>
-        <el-col
-          :span="6"
-          v-loading.lock="hostLoading"
-          style="display: flex; justify-content: center; align-items: center"
-        >
-          <el-statistic
-            title="主机"
-            :value="hostNum"
-            @click="currentDisplay = 'host'"
-            style="text-align: center; margin: 20px"
-          />
+      <el-row :gutter="18">
+        <el-col :span="6" v-loading.lock="hostLoading"
+          style="display: flex; justify-content: center; align-items: center;background: #E5F5F9;border-radius: 40px;">
+          <el-statistic title="主机" :value="hostNum" @click="currentDisplay = 'host'" :class="[currentDisplay == 'host'?'current col1':'']"/>
         </el-col>
-        <el-col :span="18">
-          <el-row justify="space-evenly">
-            <el-col
-              :span="6"
-              v-loading.lock="processLoading"
-              style="
-                border-right: 1px solid #dcdfe6;
-                border-bottom: 1px solid #dcdfe6;
-              "
-            >
-              <el-statistic
-                title="进程"
-                :value="processNum"
-                @click="currentDisplay = 'process'"
-                style="text-align: center; margin: 20px"
-              />
+        <el-col :span="9">
+          <el-row style="background:#E5EBFB;border-radius:40px;margin-bottom: 18px;" justify="space-evenly">
+            <el-col :span="12" v-loading.lock="processLoading">
+              <el-statistic title="进程" :value="processNum" @click="currentDisplay = 'process'" :class="[currentDisplay == 'process'?'current col2':'']"
+                style="text-align: center; margin: 26px 0 26px 42px;border-right: 1px solid #BFBECC;" />
             </el-col>
-            <el-col
-              :span="6"
-              v-loading.lock="portLoading"
-              style="
-                border-right: 1px solid #dcdfe6;
-                border-bottom: 1px solid #dcdfe6;
-                border-left: 1px solid #dcdfe6;
-              "
-            >
-              <el-statistic
-                title="端口"
-                :value="portNum"
-                @click="currentDisplay = 'port'"
-                style="text-align: center; margin: 20px"
-              />
-            </el-col>
-            <el-col
-              :span="6"
-              v-loading.lock="appLoading"
-              style="
-                border-right: 1px solid #dcdfe6;
-                border-bottom: 1px solid #dcdfe6;
-                border-left: 1px solid #dcdfe6;
-              "
-            >
-              <el-statistic
-                title="应用"
-                :value="appNum"
-                @click="currentDisplay = 'app'"
-                style="text-align: center; margin: 20px"
-              />
-            </el-col>
-            <el-col
-              :span="6"
-              v-loading.lock="userLoading"
-              style="
-                border-bottom: 1px solid #dcdfe6;
-                border-left: 1px solid #dcdfe6;
-              "
-            >
-              <el-statistic
-                title="用户"
-                :value="userNum"
-                @click="currentDisplay = 'user'"
-                style="text-align: center; margin: 20px"
-              />
+            <el-col :span="12" v-loading.lock="portLoading">
+              <el-statistic title="端口" :value="portNum" @click="currentDisplay = 'port'" :class="[currentDisplay == 'port'?'current col2':'']"
+                style="text-align: center; margin: 26px 0 26px 42px" />
             </el-col>
           </el-row>
-          <el-row justify="space-evenly">
-            <el-col
-              :span="6"
-              style="
-                border-top: 1px solid #dcdfe6;
-                border-right: 1px solid #dcdfe6;
-              "
-            >
-              <el-statistic
-                title="Web 网站"
-                :value="websiteNum"
-                @click="currentDisplay = 'website'"
-                style="text-align: center; margin: 20px"
-              />
+          <el-row  style="background:#E5EBFB;border-radius:40px;" justify="space-evenly">
+            <el-col :span="12">
+              <el-statistic title="Web 网站" :value="websiteNum" @click="currentDisplay = 'website'" :class="[currentDisplay == 'website'?'current col2':'']"
+                style="text-align: center; margin: 26px 0 26px 42px;border-right: 1px solid #BFBECC;" />
             </el-col>
-            <el-col
-              :span="6"
-              style="
-                border-top: 1px solid #dcdfe6;
-                border-right: 1px solid #dcdfe6;
-                border-left: 1px solid #dcdfe6;
-              "
-            >
-              <el-statistic
-                title="Docker 镜像"
-                :value="dockerImageNum"
-                @click="currentDisplay = 'dockerImage'"
-                style="text-align: center; margin: 20px"
-              />
+            <el-col :span="12">
+              <el-statistic title="Docker 镜像" :value="dockerImageNum" @click="currentDisplay = 'dockerImage'" :class="[currentDisplay == 'dockerImage'?'current col2':'']"
+                style="text-align: center; margin: 26px 0 26px 42px" />
             </el-col>
-            <el-col
-              :span="6"
-              style="
-                border-top: 1px solid #dcdfe6;
-                border-right: 1px solid #dcdfe6;
-                border-left: 1px solid #dcdfe6;
-              "
-            >
-              <el-statistic
-                title="Docker 容器"
-                :value="dockerContainerNum"
-                @click="currentDisplay = 'dockerContainer'"
-                style="text-align: center; margin: 20px"
-              />
+          </el-row>
+        </el-col>
+        <el-col :span="9">
+          <el-row style="background:#FFF1EB;border-radius:40px;margin-bottom: 18px;" justify="space-evenly">
+            <el-col :span="12" v-loading.lock="appLoading">
+              <el-statistic title="应用" :value="appNum" @click="currentDisplay = 'app'" :class="[currentDisplay == 'app'?'current col3':'']"
+                style="text-align: center; margin: 26px 0 26px 42px;border-right: 1px solid #BFBECC;" />
             </el-col>
-            <el-col
-              :span="6"
-              style="
-                border-top: 1px solid #dcdfe6;
-                border-left: 1px solid #dcdfe6;
-              "
-            >
-              <el-statistic
-                title="Docker 网络"
-                :value="dockerNetworkNum"
-                @click="currentDisplay = 'dockerNetwork'"
-                style="text-align: center; margin: 20px"
-              />
+            <el-col :span="12" v-loading.lock="userLoading" >
+              <el-statistic title="用户" :value="userNum" @click="currentDisplay = 'user'" :class="[currentDisplay == 'user'?'current col3':'']"
+                style="text-align: center; margin: 26px 0 26px 42px" />
+            </el-col>
+          </el-row>
+          <el-row style="background:#FFF1EB;border-radius:40px;" justify="space-evenly">
+            <el-col :span="12">
+              <el-statistic title="Docker 容器" :value="dockerContainerNum" @click="currentDisplay = 'dockerContainer'" :class="[currentDisplay == 'dockerContainer'?'current col3':'']"
+                style="text-align: center;  margin: 26px 0 26px 42px;border-right: 1px solid #BFBECC;" />
+            </el-col>
+            <el-col :span="12">
+              <el-statistic title="Docker 网络" :value="dockerNetworkNum" @click="currentDisplay = 'dockerNetwork'" :class="[currentDisplay == 'dockerNetwork'?'current col3':'']"
+                style="text-align: center; margin: 26px 0 26px 42px" />
             </el-col>
           </el-row>
         </el-col>
       </el-row>
     </template>
 
-    <div
-      v-if="currentDisplay === 'host'"
-      v-loading.lock="hostLoading"
-      class="card-body"
-    >
-      <el-table :data="hostDataDisplay">
-        <el-table-column
-          v-for="(column, columnIdx) of hostDataColumns"
-          :prop="column"
-          :label="column"
-          :key="`host-column-${columnIdx}`"
-        />
+    <div v-if="currentDisplay === 'host'" v-loading.lock="hostLoading" class="card-body">
+      <el-table :data="hostDataDisplay" style="background:#F8F8F8;border-radius: 23px 23px 0 0;" :header-cell-style="setCellStyle"
+              :cell-style="setBodyCellStyle">
+        <el-table-column v-for="(column, columnIdx) of hostDataColumns" :prop="column" :label="column"
+          :key="`host-column-${columnIdx}`" />
       </el-table>
-      <el-pagination
-        :total="hostNum"
-        :current-page="hostDataCurrentPage"
-        @current-change="hostDataNextPage"
-        layout="prev, pager, next"
-        style="margin: 0 auto"
-      />
+      <el-pagination :total="hostNum" :current-page="hostDataCurrentPage" @current-change="hostDataNextPage"
+        layout="prev, pager, next"  />
     </div>
-    <div
-      v-else-if="currentDisplay === 'process'"
-      v-loading.lock="processLoading"
-      class="card-body"
-    >
-      <el-table :data="processDataDisplay" :max-height="'100%'">
-        <el-table-column
-          v-for="(column, columnIdx) of processDataColumns"
-          :prop="column"
-          :label="column"
-          :key="`process-column-${columnIdx}`"
-        />
+    <div v-else-if="currentDisplay === 'process'" v-loading.lock="processLoading" class="card-body">
+      <el-table :data="processDataDisplay" :max-height="'100%'" style="background:#F8F8F8;border-radius: 23px 23px 0 0;" :header-cell-style="setCellStyle"
+              :cell-style="setBodyCellStyle">
+        <el-table-column v-for="(column, columnIdx) of processDataColumns" :prop="column" :label="column"
+          :key="`process-column-${columnIdx}`" />
       </el-table>
-      <el-pagination
-        :total="processNum"
-        :current-page="processDataCurrentPage"
-        @current-change="processDataNextPage"
-        layout="prev, pager, next"
-        style="margin: 0 auto"
-      />
+      <el-pagination :total="processNum" :current-page="processDataCurrentPage" @current-change="processDataNextPage"
+        layout="prev, pager, next"  />
     </div>
-    <div
-      v-else-if="currentDisplay === 'port'"
-      v-loading.lock="portLoading"
-      class="card-body"
-    >
-      <el-table :data="portDataDisplay">
-        <el-table-column
-          v-for="(column, columnIdx) of portDataColumns"
-          :prop="column"
-          :label="column"
-          :key="`port-column-${columnIdx}`"
-        />
+    <div v-else-if="currentDisplay === 'port'" v-loading.lock="portLoading" class="card-body">
+      <el-table :data="portDataDisplay" style="background:#F8F8F8;border-radius: 23px 23px 0 0;" :header-cell-style="setCellStyle"
+              :cell-style="setBodyCellStyle">
+        <el-table-column v-for="(column, columnIdx) of portDataColumns" :prop="column" :label="column"
+          :key="`port-column-${columnIdx}`" />
       </el-table>
-      <el-pagination
-        :total="portNum"
-        :current-page="portDataCurrentPage"
-        @current-change="portDataNextPage"
-        layout="prev, pager, next"
-        style="margin: 0 auto"
-      />
+      <el-pagination :total="portNum" :current-page="portDataCurrentPage" @current-change="portDataNextPage"
+        layout="prev, pager, next"  />
     </div>
-    <div
-      v-else-if="currentDisplay === 'app'"
-      v-loading.lock="appLoading"
-      class="card-body"
-    >
-      <el-table :data="appDataDisplay">
-        <el-table-column
-          v-for="(column, columnIdx) of appDataColumns"
-          :prop="column"
-          :label="column"
-          :key="`app-column-${columnIdx}`"
-        />
+    <div v-else-if="currentDisplay === 'app'" v-loading.lock="appLoading" class="card-body">
+      <el-table :data="appDataDisplay" style="background:#F8F8F8;border-radius: 23px 23px 0 0;" :header-cell-style="setCellStyle"
+              :cell-style="setBodyCellStyle">
+        <el-table-column v-for="(column, columnIdx) of appDataColumns" :prop="column" :label="column"
+          :key="`app-column-${columnIdx}`" />
       </el-table>
-      <el-pagination
-        :total="appNum"
-        :current-page="appDataCurrentPage"
-        @current-change="appDataNextPage"
-        layout="prev, pager, next"
-        style="margin: 0 auto"
-      />
+      <el-pagination :total="appNum" :current-page="appDataCurrentPage" @current-change="appDataNextPage"
+        layout="prev, pager, next"  />
     </div>
-    <div
-      v-else-if="currentDisplay === 'user'"
-      v-loading.lock="userLoading"
-      class="card-body"
-    >
-      <el-table :data="userDataDisplay">
-        <el-table-column
-          v-for="(column, columnIdx) of userDataColumns"
-          :prop="column"
-          :label="column"
-          :key="`user-column-${columnIdx}`"
-        />
+    <div v-else-if="currentDisplay === 'user'" v-loading.lock="userLoading" class="card-body">
+      <el-table :data="userDataDisplay" style="background:#F8F8F8;border-radius: 23px 23px 0 0;" :header-cell-style="setCellStyle"
+              :cell-style="setBodyCellStyle">
+        <el-table-column v-for="(column, columnIdx) of userDataColumns" :prop="column" :label="column"
+          :key="`user-column-${columnIdx}`" />
       </el-table>
-      <el-pagination
-        :total="userNum"
-        :current-page="userDataCurrentPage"
-        @current-change="userDataNextPage"
-        layout="prev, pager, next"
-        style="margin: 0 auto"
-      />
+      <el-pagination :total="userNum" :current-page="userDataCurrentPage" @current-change="userDataNextPage"
+        layout="prev, pager, next" />
     </div>
-    <div
-      v-else-if="currentDisplay === 'website'"
-      v-loading.lock="websiteLoading"
-      class="card-body"
-    >
-      <el-table :data="websiteDataDisplay">
-        <el-table-column
-          v-for="(column, columnIdx) of websiteDataColumns"
-          :prop="column"
-          :label="column"
-          :key="`website-column-${columnIdx}`"
-        />
+    <div v-else-if="currentDisplay === 'website'" v-loading.lock="websiteLoading" class="card-body">
+      <el-table :data="websiteDataDisplay" style="background:#F8F8F8;border-radius: 23px 23px 0 0;" :header-cell-style="setCellStyle"
+              :cell-style="setBodyCellStyle">
+        <el-table-column v-for="(column, columnIdx) of websiteDataColumns" :prop="column" :label="column"
+          :key="`website-column-${columnIdx}`" />
       </el-table>
-      <el-pagination
-        :total="websiteNum"
-        :current-page="websiteDataCurrentPage"
-        @current-change="websiteDataNextPage"
-        layout="prev, pager, next"
-        style="margin: 0 auto"
-      />
+      <el-pagination :total="websiteNum" :current-page="websiteDataCurrentPage" @current-change="websiteDataNextPage"
+        layout="prev, pager, next" />
     </div>
-    <div
-      v-else-if="currentDisplay === 'dockerImage'"
-      v-loading.lock="dockerImageLoading"
-      class="card-body"
-    >
-      <el-table :data="dockerImageDataDisplay">
-        <el-table-column
-          v-for="(column, columnIdx) of dockerImageDataColumns"
-          :prop="column"
-          :label="column"
-          :key="`dockerImage-column-${columnIdx}`"
-        />
+    <div v-else-if="currentDisplay === 'dockerImage'" v-loading.lock="dockerImageLoading" class="card-body">
+      <el-table :data="dockerImageDataDisplay" style="background:#F8F8F8;border-radius: 23px 23px 0 0;" :header-cell-style="setCellStyle"
+              :cell-style="setBodyCellStyle">
+        <el-table-column v-for="(column, columnIdx) of dockerImageDataColumns" :prop="column" :label="column"
+          :key="`dockerImage-column-${columnIdx}`" />
       </el-table>
-      <el-pagination
-        :total="dockerImageNum"
-        :current-page="dockerImageDataCurrentPage"
-        @current-change="dockerImageDataNextPage"
-        layout="prev, pager, next"
-        style="margin: 0 auto"
-      />
+      <el-pagination :total="dockerImageNum" :current-page="dockerImageDataCurrentPage"
+        @current-change="dockerImageDataNextPage" layout="prev, pager, next"  />
     </div>
-    <div
-      v-else-if="currentDisplay === 'dockerContainer'"
-      v-loading.lock="dockerContainerLoading"
-      class="card-body"
-    >
-      <el-table :data="dockerContainerDataDisplay">
-        <el-table-column
-          v-for="(column, columnIdx) of dockerContainerDataColumns"
-          :prop="column"
-          :label="column"
-          :key="`dockerContainer-column-${columnIdx}`"
-        />
+    <div v-else-if="currentDisplay === 'dockerContainer'" v-loading.lock="dockerContainerLoading" class="card-body">
+      <el-table :data="dockerContainerDataDisplay" style="background:#F8F8F8;border-radius: 23px 23px 0 0;" :header-cell-style="setCellStyle"
+              :cell-style="setBodyCellStyle">
+        <el-table-column v-for="(column, columnIdx) of dockerContainerDataColumns" :prop="column" :label="column"
+          :key="`dockerContainer-column-${columnIdx}`" />
       </el-table>
-      <el-pagination
-        :total="dockerContainerNum"
-        :current-page="dockerContainerDataCurrentPage"
-        @current-change="dockerContainerDataNextPage"
-        layout="prev, pager, next"
-        style="margin: 0 auto"
-      />
+      <el-pagination :total="dockerContainerNum" :current-page="dockerContainerDataCurrentPage"
+        @current-change="dockerContainerDataNextPage" layout="prev, pager, next"  />
     </div>
-    <div
-      v-else-if="currentDisplay === 'dockerNetwork'"
-      v-loading.lock="dockerNetworkLoading"
-      class="card-body"
-    >
-      <el-table :data="dockerNetworkDataDisplay">
-        <el-table-column
-          v-for="(column, columnIdx) of dockerNetworkDataColumns"
-          :prop="column"
-          :label="column"
-          :key="`dockerNetwork-column-${columnIdx}`"
-        />
+    <div v-else-if="currentDisplay === 'dockerNetwork'" v-loading.lock="dockerNetworkLoading" class="card-body">
+      <el-table :data="dockerNetworkDataDisplay" style="background:#F8F8F8;border-radius: 23px 23px 0 0;" :header-cell-style="setCellStyle"
+              :cell-style="setBodyCellStyle">
+        <el-table-column v-for="(column, columnIdx) of dockerNetworkDataColumns" :prop="column" :label="column"
+          :key="`dockerNetwork-column-${columnIdx}`" />
       </el-table>
-      <el-pagination
-        :total="dockerNetworkNum"
-        :current-page="dockerNetworkDataCurrentPage"
-        @current-change="dockerNetworkDataNextPage"
-        layout="prev, pager, next"
-        style="margin: 0 auto"
-      />
+      <el-pagination :total="dockerNetworkNum" :current-page="dockerNetworkDataCurrentPage"
+        @current-change="dockerNetworkDataNextPage" layout="prev, pager, next"  />
     </div>
   </el-card>
 </template>
 
-<style scoped>
-.el-statistic {
-  cursor: pointer;
+<style lang="scss" scoped>
+$theme-color: #6B78D3;
+.el-card {
+  padding: 20px 30px;
+  box-shadow: none;
+  border: none;
+  :deep .el-card__header{
+    border: none;
+    padding-bottom: 0;
+  }
+  :deep .el-statistic {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    // justify-content: center;
+    line-height: 36px;
+    &.current{
+      .el-statistic__head{
+        --el-statistic-title-font-size: 18px;
+        &::before{
+          width: 6px;
+          height: 6px;
+          background: #fff;
+        }
+      }
+      
+      .el-statistic__content{
+        --el-statistic-content-font-size:18px;
+      }
+    }
+    &.col1{
+      .el-statistic__head{
+        color: #2DA9BF;
+        &::before{
+          border: 6px solid #2EA9BF;
+        }
+      }
+      .el-statistic__content{
+        color: #2DA9BF;
+      }
+    }
+    &.col2{
+      .el-statistic__head{
+        color: #6B78D3;
+        &::before{
+          border: 6px solid #6B78D3;
+        }
+      }
+      .el-statistic__content{
+        color: #6B78D3;
+      }
+    }
+    &.col3{
+      .el-statistic__head{
+        color: #FFA079;
+        &::before{
+          border: 6px solid #FFA079;
+        }
+      }
+      .el-statistic__content{
+        color: #FFA079;
+      }
+    }
+    .el-statistic__head{
+        --el-statistic-title-font-size: 16px;
+        margin-right: 8px;
+        color: #BFBECC;
+        margin-bottom: 0;
+        padding-left: 25px;
+        position: relative;
+        &::before{
+          display: block;
+          content: '';
+          width: 11px;
+          height: 11px;
+          background: #BFBECC;
+          border-radius: 50%;
+          position: absolute;
+          left: 0;
+          top: 50%;
+          transform: translate(0,-50%);
+        }
+      }
+      
+      .el-statistic__content{
+        --el-statistic-content-font-size:16px;
+        color: #BFBECC;
+      }
+    
+  }
+  :deep .el-scrollbar {
+  --el-scrollbar-bg-color: #6B78D3;
+  --el-scrollbar-opacity: 1;
 }
+.el-pagination {
+  margin: 22px auto;
 
+  button {
+    min-width: 25px;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background-color: #E6EBFB;
+
+    .el-icon {
+      font-size: 16px;
+      color: $theme-color;
+    }
+  }
+
+  button:disabled {
+    .el-icon {
+      color: #fff;
+    }
+  }
+}
+:deep .el-pager{
+  margin: 0 15px;
+  li {
+  font-size: 14px;
+  color: #BFBECC;
+}
+li.is-active {
+  color: $theme-color;
+}
+}
 .card-body {
   display: flex;
   flex-direction: column;
 }
+}
+
+
 </style>
