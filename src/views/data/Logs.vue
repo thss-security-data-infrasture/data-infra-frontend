@@ -337,16 +337,16 @@ function auditDataNextPage(page) {
         <el-row>
           <el-col :span="16" style="display: flex; min-width: 800px;">
             <el-date-picker v-model="logQueryTimeRange" type="datetimerange" :shortcuts="logQueryTimeRangeShortcuts"
-              range-separator="-" start-placeholder="开始时间" end-placeholder="结束时间" style="min-width: 460px;border-radius: 20px;"
+              range-separator="-" start-placeholder="开始时间" end-placeholder="结束时间" style="width: 40%;border-radius: 20px;"
               popper-class="'datetimerange-class'" />
             <el-select v-model="logQueryTypes" multiple collapse-tags collapse-tags-tooltip placeholder="请选择日志类型"
-              style="min-width: 240px;" popper-class="log-type-sel">
+              style="width: 26%;" popper-class="log-type-sel">
               <el-option label="流量日志" value="traffic" />
               <el-option label="告警日志" value="alert" />
               <el-option label="应用日志" value="app" />
               <el-option label="审计日志" value="audit" />
             </el-select>
-            <el-input v-model="logQueryIp" placeholder="请输入 ip，多个 ip 请用 , 分隔（可以为空）" clearable>
+            <el-input v-model="logQueryIp" placeholder="请输入 ip，多个 ip 请用 , 分隔（可以为空）" clearable style="width: 34%;">
               <template #append>
                 <el-button>
                   <el-icon @click="logQuery">
